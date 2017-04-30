@@ -5,13 +5,16 @@
 class Database{
     private:
         Table* descriptor;
-        Table* searchTable(std::string name);
     public:
         void setDescriptor(Table* descriptor);
         void insertNode(Table* tableNode);
         Table* getDescriptor();
         Record* searchRecord(std::string tableName, std::string id);
+        void alterTable(std::string tableName, std::vector<std::string> keys);
         Database();
+        Table* searchTable(std::string name);
+        void insertRecord(std::string tableName, Record* rec);
+
 
 };
 

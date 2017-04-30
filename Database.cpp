@@ -43,14 +43,49 @@ Table* Database::searchTable(std::string name)
 Record* Database::searchRecord(std::string tableName, std::string id)
 {
     Table* t = searchTable(tableName);
-    std::cout<<"table found"<<std::endl;
+
+    if(t == NULL){
+        std::cout<<"Tabela não encontrada"<<std::endl;
+        return NULL;
+    }
+
     Record* r = t->searchRecord(id);
 
-     for(int i = 0; i < t->getColumns().size(); ++i)
+    if(r == NULL){
+        std::cout<<"Registro não encontrado"<<std::endl;
+        return NULL;
+    }
+    for(int i = 0; i < t->getColumns().size(); ++i){
         std::cout<<t->getColumns().at(i)<<"\t";
+    }
     std::cout<<std::endl;
 
     for(int i = 0; i < r->getValues().size(); ++i )
         std::cout<<r->getValues().at(i)<<"\t";
 }
 
+void Database::alterTable(std::string tableName, std::vector<std::string>keys)
+{
+
+    Table* t = searchTable(tableName);
+
+    if(t == NULL){
+        std::cout<<"Tabela não encontrada"<<std::endl;
+        return;
+    }
+
+    t->setPrimaryKeys(keys);
+
+
+}
+
+void Database::insertRecord(std::string tableName, Record* rec)
+{
+    Table* t = searchTable(tableName);
+    if(t == NULL){
+        std::cout<<"Tabela não encontrada"<<std::endl;
+        return;
+    }
+    t->insertRecord(rec);
+
+}
