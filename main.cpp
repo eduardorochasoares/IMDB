@@ -5,18 +5,148 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <time.h>
+#include <climits>
 
-using namespace std;
-void readSql(std::string path);
+
+
+void readSqlAndIndexing(std::string path, Database* db);
+
 int main()
 {
-    readSql("/home/eduardo/Documentos/usda-r18-1.0/usda.sql");
+    Database* db = new Database();
+    int opt;
+    std::string path = "";
+    do{
+        std::cout<<"Escolha uma opção"<<std::endl;
+        std::cout<<"1 - Indexar base de dados em um arquivo"<<std::endl;
+        std::cout<<"2 - Criar uma tabela manualmente"<<std::endl;
+        std::cout<<"3 - Inserir registros em uma tabela manualmente"<<std::endl;
+        std::cout<<"4 - Buscar um registro"<<std::endl;
+        std::cout<<"9 - Sair"<<std::endl;
+        std::cin >> opt;
+
+        switch(opt){
+            case 1:{
+                std::cout<<"Informe o caminho completo do arquivo sql"<<std::endl;
+                std::cin >> path;
+                readSqlAndIndexing(path, db);
+
+                break;
+            }
+            case 2:{
+
+                std::string name;
+                std::string aux;
+                Table* table;
+                std::vector<std::string> columns;
+                std::cout<<"Informe o nome da tabela"<<std::endl;
+                std::cin >> name;
+                std::cin.ignore();
+
+                std::cout<<"Informe o nome das colunas da tabela em uma única linha e separados por espaço. Para definir um ou mais campos como chave primaria, coloque * no final de seu nome sem espaco"<<std::endl;
+                std::cout<<"Exemplo: id* nome idade"<<std::endl;
+                std::getline (std::cin, aux);
+                std::stringstream ss;
+                std::vector<int> primaryKeysIndex;
+
+                ss.str(aux);
+                int i = 0;
+                while(getline(ss, aux, ' ')){
+                    if(aux.find("*") != std::string::npos){
+                        primaryKeysIndex.push_back(i);
+                        aux.erase(std::remove(aux.begin(), aux.end(), '*'), aux.end());
+                    }
+                    columns.push_back(aux);
+                    ++i;
+                }
+                table = new Table(name, columns);
+                table->setPrimaryKeyIndex(primaryKeysIndex);
+                db->insertNode(table);
+
+                break;
+            }
+
+            case 3:{
+                std::string tableName;
+                std::string aux;
+                std::stringstream ss;
+                std::vector<std::string> values;
+                Record* record;
+                std::cout<<"Informe o nome da tabela onde o registro sera inserido: "<<std::endl;
+                std::cin >> tableName;
+                Table* t = db->searchTable(tableName);
+                if(t == NULL){
+                    std::cout<<"A tabela nao existe"<<std::endl;
+                    break;
+                }
+                std::cout<<"Digite em uma única linha separado por espaco o valor dos seguintes campos (em ordem):"<<std::endl;
+                std::vector<std::string> fields = t->getColumns();
+                for(int i = 0; i < fields.size(); ++i)
+                    std::cout<<fields[i]<<" ";
+                std::cout<<std::endl;
+                std::cin.ignore();
+                std::getline (std::cin, aux);
+                ss.str(aux);
+
+                while(getline(ss, aux, ' ')){
+                    values.push_back(aux);
+
+                }
+                record = new Record();
+                record->setValues(values);
+                t->insertRecord(record);
+                break;
+            }
+
+            case 4:
+                std::string tableName;
+                std::cout<<"Digite o nome da tabela onde a busca sera feita"<<std::endl;
+                std::cin >> tableName;
+                Table* t = db->searchTable(tableName);
+
+                if(t == NULL){
+                    std::cout<<"Tabela inexistente"<<std::endl;
+                    std::cout<<std::endl;
+                }else{
+                    std::vector<std::string> columns;
+                    std::string aux;
+                    std::string values;
+                    int count = 0;
+                    std::vector<int> indexPrimaryKeys = t->getPrimaryKeyIndex();
+                    columns = t->getColumns();
+                    std::cout<<"A tabela selecionada tem os ćampos abaixo como chave primaria, caso seja mais de uma digite os valores em uma única linha separados por espaco."<<std::endl;
+                    std::cout<<"Campos de chave primaria: ";
+                    for(int i = 0; i < indexPrimaryKeys.size(); ++i){
+                        std::cout<<columns[indexPrimaryKeys[i]]<<" ";
+                        ++count;
+                    }
+                    std::cout<<std::endl;
+                    std::cin.ignore();
+                    std::getline (std::cin, aux);
+                    std::cout<<std::endl;
+                    std::cout<<"Registro Retornado"<<std::endl;
+                    std::cout<<std::endl;
+
+                    t->printResult(t->searchRecord(aux));
+
+                    std::cout<<std::endl;
+                }
+                break;
+
+        }
+
+    }while(opt != 9);
+
+    delete db;
+
+
     return 0;
 
 
 }
 
-void readSql(std::string path){
+void readSqlAndIndexing(std::string path, Database* db){
 
     std::ifstream file;
     std::string line;
@@ -26,11 +156,11 @@ void readSql(std::string path){
     std::stringstream ss;
     std::vector<std::string> columns;
     std::vector<std::string> primaryKeys;
-    std::vector<string> tokens;
-    Database* db = new Database();
+    std::vector<std::string> tokens;
+
     Table* table = NULL;
     file.open(path.c_str(), std::ifstream::in);
-
+    clock_t begin = clock();
     while(std::getline(file,line)){
         if(line.find("ALTER TABLE ONLY") != std::string::npos){
             primaryKeys.erase(primaryKeys.begin(), primaryKeys.end());
@@ -128,7 +258,9 @@ void readSql(std::string path){
     }
 
     file.clear();
-    file.seekg(0, ios::beg);
+
+    //volta para o início do arquivo
+    file.seekg(0, std::ios::beg);
     tokens.erase(tokens.begin(), tokens.end());
 
      while(std::getline(file,line)){
@@ -142,7 +274,7 @@ void readSql(std::string path){
             }
 
             std::stringstream ss(data);
-            std::vector<string> tokens;
+            std::vector<std::string> tokens;
 
             while(getline(ss, tableName, '(')){
                 tokens.push_back(tableName);
@@ -201,11 +333,18 @@ void readSql(std::string path){
 
 
     }
+    clock_t end = clock();
+    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    std::cout<<"Time elapsed: " <<time_spent<<std::endl;
 
 
-
-
-    db->searchRecord("weight", "83110 5");
-
+    db->getDatabaseColisions();
+    begin = clock();
+    db->getAllData();
+    end = clock();
+    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    std::cout<<std::endl;
+    std::cout<<"Time elapsed: " <<time_spent<<std::endl;
+    delete db;
 
 }

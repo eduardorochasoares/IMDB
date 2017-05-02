@@ -6,15 +6,19 @@ class Database{
     private:
         Table* descriptor;
     public:
-        void setDescriptor(Table* descriptor);
-        void insertNode(Table* tableNode);
+        Database();
         Table* getDescriptor();
         Record* searchRecord(std::string tableName, std::string id);
-        void alterTable(std::string tableName, std::vector<std::string> keys);
-        Database();
         Table* searchTable(std::string name);
-        void insertRecord(std::string tableName, Record* rec);
+        void getDatabaseColisions();
 
+        void insertRecord(std::string tableName, Record* rec);
+        void alterTable(std::string tableName, std::vector<std::string> keys);
+        void setDescriptor(Table* descriptor);
+        void insertNode(Table* tableNode);
+
+        void getAllData();
+        ~Database();
 
 };
 

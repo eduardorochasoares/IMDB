@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1493573794 source:/home/eduardo/Documentos/trabAED/trabAED/main.cpp
+1493680779 source:/home/eduardo/Documentos/trabAED/trabAED/main.cpp
 	<iostream>
 	<fstream>
 	"Database.h"
@@ -7,6 +7,8 @@
 	<sstream>
 	<algorithm>
 	<iterator>
+	<time.h>
+	<climits>
 
 1493343853 source:/home/eduardo/Documentos/trabAED/trabAED/Registro.cpp
 	"Registro.h"
@@ -15,12 +17,13 @@
 	<string>
 	<vector>
 
-1493499780 source:/home/eduardo/Documentos/trabAED/trabAED/Database.cpp
+1493663158 source:/home/eduardo/Documentos/trabAED/trabAED/Database.cpp
 	"Database.h"
 	<stdio.h>
 	<iostream>
+	<fstream>
 
-1493498287 /home/eduardo/Documentos/trabAED/trabAED/Database.h
+1493648777 /home/eduardo/Documentos/trabAED/trabAED/Database.h
 	"Table.h"
 
 1493348609 /home/eduardo/Documentos/trabAED/trabAED/Tabela.h
@@ -41,7 +44,7 @@
 1493348609 source:/home/eduardo/Documentos/trabAED/trabAED/Register.cpp
 	"Register.h"
 
-1493502510 /home/eduardo/Documentos/trabAED/trabAED/Table.h
+1493670761 /home/eduardo/Documentos/trabAED/trabAED/Table.h
 	<string>
 	"Record.h"
 	<algorithm>
@@ -54,11 +57,12 @@
 1493349757 source:/home/eduardo/Documentos/trabAED/trabAED/Record.cpp
 	"Record.h"
 
-1493573931 source:/home/eduardo/Documentos/trabAED/trabAED/Table.cpp
+1493689350 source:/home/eduardo/Documentos/trabAED/trabAED/Table.cpp
 	"Table.h"
 	<functional>
 	<stdio.h>
 	<iostream>
 	<math.h>
 	<sstream>
+	<fstream>
 

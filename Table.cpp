@@ -5,6 +5,7 @@
 #include <iostream>
 #include <math.h>
 #include <sstream>
+#include <fstream>
 
 std::string Table::getName(){
     return this->name;
@@ -67,15 +68,21 @@ void Table::insertRecord(Record* reg)
     std::string id = "";
     std::string aux ="";
     unsigned long hash = 0;
+
     std::vector<std::string> values = reg->getValues();
-    for(int i = 0; i < primaryKeysIndex.size(); ++ i){
-        aux = values[primaryKeysIndex[i]];
+    if(primaryKeysIndex.size() > 0){
+        for(int i = 0; i < primaryKeysIndex.size(); ++ i){
 
-        aux.erase(std::remove(aux.begin(), aux.end(), ' '), aux.end());
-        reg->getValues().at(primaryKeysIndex[i]) = aux;
+            aux = values[primaryKeysIndex[i]];
+            aux.erase(std::remove(aux.begin(), aux.end(), ' '), aux.end());
+            reg->getValues().at(primaryKeysIndex[i]) = aux;
 
-       hash+= djb2(aux);
+            hash+= djb2(aux);
 
+        }
+    }else{
+        primaryKeysIndex.push_back(0);
+        hash = djb2(reg->getValues().at(0));
     }
 
 
@@ -88,6 +95,7 @@ void Table::insertRecord(Record* reg)
             reg->setNext(NULL);
             this->records[k] = reg;
         }else{
+            this->colisions+=1;
             insertAux(records[k], reg);
         }
 
@@ -95,6 +103,8 @@ void Table::insertRecord(Record* reg)
         std::cout<<"tabela: "<<name<<" numero de colunas: "<<columns.size()<<" numero de valores: "<<values.size()<<std::endl;
         perror ("Número errado de colunas");
     }
+    this->records_number+=1;
+    writePrimaryKeyFile(reg);
 
 }
 Record* Table::searchRecord(std::string id)
@@ -111,14 +121,16 @@ Record* Table::searchRecord(std::string id)
 
 
     int k = hashFunction(hash);
+    if(records[k] == NULL) return NULL;
 
     if(concatComposeKey(records[k]) == id){
         return records[k];
     }else{
         Record* r = records[k]->getNext();
         while(r != NULL){
-            if(concatComposeKey(r)== id)
+            if(concatComposeKey(r)== id){
                 return r;
+            }
             else
                 r = r->getNext();
         }
@@ -146,12 +158,24 @@ Table::Table(std::string name, std::vector<std::string> columns)
         records[i] = NULL;
 
     this->columns = columns;
+    this->colisions = 0;
+    this->records_number = 0;
 }
 
 
 Table::~Table()
 {
-
+    Record* p;
+    Record* aux;
+    for(int i = 0; i < TSIZE; ++i){
+        p = this->records[i];
+        while(p != NULL){
+            aux = p->getNext();
+            delete p;
+            p = aux;
+        }
+    }
+    delete []records;
 }
 
 void Table::setPrimaryKeys(std::vector<std::string> columns_primary)
@@ -175,3 +199,52 @@ std::string Table::concatComposeKey(Record* r)
     return result;
 }
 
+int Table::getColisionsNumber()
+{
+    return this->colisions;
+}
+
+int Table::getRecordsNumber()
+{
+    return this->records_number;
+}
+
+
+void Table::writePrimaryKeyFile(Record* rec)
+{
+    std::ofstream f;
+    std::vector<std::string> data = rec->getValues();
+    std::string path = name + ".txt";
+    f.open(path.c_str(), std::ios_base::app);
+
+    for(int i = 0; i < primaryKeysIndex.size(); ++i)
+        f << data[primaryKeysIndex[i]] << " ";
+
+    f << std::endl;
+}
+
+std::vector<int> Table::getPrimaryKeyIndex()
+{
+    return this->primaryKeysIndex;
+}
+
+void Table::setPrimaryKeyIndex(std::vector<int>index)
+{
+    this->primaryKeysIndex = index;
+}
+
+void Table::printResult(Record* rec)
+{
+    if(rec == NULL){
+        std::cout<<"Registro nao existente"<<std::endl;
+        return;
+    }
+    for(int i = 0; i < columns.size(); ++i)
+        std::cout<<columns[i]<< " ";
+    std::cout<<std::endl;
+
+    std::vector<std::string> values = rec->getValues();
+    for(int i = 0; i < values.size(); ++i)
+        std::cout<<values[i]<<" ";
+    std::cout<<std::endl;
+}

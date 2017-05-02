@@ -1,7 +1,7 @@
 #include "Database.h"
 #include <stdio.h>
 #include <iostream>
-
+#include <fstream>
 Table* Database::getDescriptor()
 {
     return this->descriptor;
@@ -9,9 +9,30 @@ Table* Database::getDescriptor()
 
 void Database::insertNode(Table* tableNode)
 {
+    Table* p = this->descriptor;
+    //BD está vazio
+    if(p == NULL){
+        this->descriptor = tableNode;
+        tableNode->setNext(NULL);
 
-    tableNode->setNext(this->descriptor);
-    this->descriptor = tableNode;
+    }else{
+        while(p->getNext() != NULL){
+            if(p->getName() == tableNode->getName()){
+                std::cout<<"Erro: ja existe uma tabela com esse nome"<<std::endl;
+                return;
+            }
+            p = p->getNext();
+        }
+        if(p->getName() == tableNode->getName()){
+            std::cout<<"Erro: ja existe uma tabela com esse nome"<<std::endl;
+            return;
+        }
+        p->setNext(tableNode);
+        tableNode->setNext(NULL);
+
+
+    }
+
 }
 
 
@@ -55,6 +76,7 @@ Record* Database::searchRecord(std::string tableName, std::string id)
         std::cout<<"Registro não encontrado"<<std::endl;
         return NULL;
     }
+   /* std::cout<<std::endl;
     for(int i = 0; i < t->getColumns().size(); ++i){
         std::cout<<t->getColumns().at(i)<<"\t";
     }
@@ -62,6 +84,8 @@ Record* Database::searchRecord(std::string tableName, std::string id)
 
     for(int i = 0; i < r->getValues().size(); ++i )
         std::cout<<r->getValues().at(i)<<"\t";
+
+    */
 }
 
 void Database::alterTable(std::string tableName, std::vector<std::string>keys)
@@ -88,4 +112,61 @@ void Database::insertRecord(std::string tableName, Record* rec)
     }
     t->insertRecord(rec);
 
+}
+
+void Database::getDatabaseColisions()
+{
+
+
+
+    Table* p = descriptor;
+
+    while(p != NULL){
+        std::cout<<"Tabela: "<<p->getName()<<" taxa de colisao: " <<(float)p->getColisionsNumber()/p->getRecordsNumber()<<std::endl;
+        p = p->getNext();
+    }
+
+}
+
+
+void Database::getAllData()
+{
+    Table* p = descriptor;
+    std::ifstream file;
+    std::string path;
+    std::string key = "";
+    std::string aux;
+    while(p != NULL){
+        path = p->getName() + ".txt";
+        file.open(path.c_str(),  std::ifstream::in);
+        int n = p->getPrimaryKeyIndex().size();
+        int  i;
+        while(file >> aux){
+            i = 0;
+            while(i < n -1){
+                key += aux + " ";
+                file >> aux;
+                ++i;
+            }
+            key += aux;
+
+            searchRecord(p->getName(), key);
+            key ="";
+        }
+
+        file.close();
+        p = p->getNext();
+    }
+}
+
+Database::~Database()
+{
+    Table* aux;
+    Table* p = this->descriptor;
+
+    while(p != NULL){
+        aux = p->getNext();
+        delete p;
+        p = aux;
+    }
 }
