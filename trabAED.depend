@@ -1,0 +1,43 @@
+# depslib dependency file v1.0
+1493766287 source:/home/eduardo/Documentos/trabAED/trabAED/Database.cpp
+	"Database.h"
+	<stdio.h>
+	<iostream>
+	<fstream>
+
+1493648777 /home/eduardo/Documentos/trabAED/trabAED/Database.h
+	"Table.h"
+
+1493764260 /home/eduardo/Documentos/trabAED/trabAED/Table.h
+	<string>
+	"Record.h"
+	<algorithm>
+	<iterator>
+
+1493349711 /home/eduardo/Documentos/trabAED/trabAED/Record.h
+	<string>
+	<vector>
+
+1493763423 source:/home/eduardo/Documentos/trabAED/trabAED/main.cpp
+	<iostream>
+	<fstream>
+	"Database.h"
+	<string.h>
+	<sstream>
+	<algorithm>
+	<iterator>
+	<time.h>
+	<climits>
+
+1493763616 source:/home/eduardo/Documentos/trabAED/trabAED/Record.cpp
+	"Record.h"
+
+1493765624 source:/home/eduardo/Documentos/trabAED/trabAED/Table.cpp
+	"Table.h"
+	<functional>
+	<stdio.h>
+	<iostream>
+	<math.h>
+	<sstream>
+	<fstream>
+
