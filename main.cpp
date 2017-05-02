@@ -12,6 +12,10 @@
 
 void readSqlAndIndexing(std::string path, Database* db);
 
+
+/**
+    Menu que permite ao usuário escolher uma ação a ser tomada
+**/
 int main()
 {
     Database* db = new Database();
@@ -30,9 +34,15 @@ int main()
             case 1:{
                 std::cout<<"Informe o caminho completo do arquivo sql"<<std::endl;
                 std::cin >> path;
+                clock_t begin = clock();
                 readSqlAndIndexing(path, db);
+                clock_t end = clock();
 
+                std::cout<<"Indexacao concluida"<<std::endl;
+                double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                std::cout<<"Time elapsed: " <<time_spent<<std::endl;
                 break;
+
             }
             case 2:{
 
@@ -62,8 +72,12 @@ int main()
                 }
                 table = new Table(name, columns);
                 table->setPrimaryKeyIndex(primaryKeysIndex);
-                db->insertNode(table);
 
+                clock_t begin = clock();
+                db->insertNode(table);
+                clock_t end = clock();
+                double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                std::cout<<"Time elapsed: " <<time_spent<<std::endl;
                 break;
             }
 
@@ -146,6 +160,15 @@ int main()
 
 }
 
+/**
+    Description: Função que lê o arquivo sql da base de dados, e chama as funções de inserção
+    de tabelas e registros
+
+    Params:
+        path - caminho para o arquivo sql
+        db - Objeto que representa o banco de dados onde serão criadas as tabelas e inseridos
+        os registros
+**/
 void readSqlAndIndexing(std::string path, Database* db){
 
     std::ifstream file;
@@ -160,7 +183,10 @@ void readSqlAndIndexing(std::string path, Database* db){
 
     Table* table = NULL;
     file.open(path.c_str(), std::ifstream::in);
-    clock_t begin = clock();
+    if(!file.good()){
+            std::cout<<"Arquivo nao existe"<<std::endl;
+            return;
+    }
     while(std::getline(file,line)){
         if(line.find("ALTER TABLE ONLY") != std::string::npos){
             primaryKeys.erase(primaryKeys.begin(), primaryKeys.end());
@@ -179,10 +205,11 @@ void readSqlAndIndexing(std::string path, Database* db){
             ss.str("");
             ss.clear();
             ss.str(line);
+            ///achou a definicao de chaves primárias
             if(line.find("PRIMARY KEY") != std::string::npos){
 
                 while(getline(ss,line,'('));
-                    //std::cout<<line<<std::endl;
+
                 ss.str("");
                 ss.clear();
                 ss.str(line);
@@ -216,7 +243,7 @@ void readSqlAndIndexing(std::string path, Database* db){
                 tokens.push_back(tableName);
             }
 
-            /*pega o nome da tabela*/
+            ///pega o nome da tabela///
             std::string t = tokens[0];
             ss.str("");
             ss.clear();
@@ -226,7 +253,7 @@ void readSqlAndIndexing(std::string path, Database* db){
 
             t = tokens[1];
 
-            /*pega as colunas da tabela*/
+            ///pega as colunas da tabela///
             t = tokens[1];
             ss.str("");
             ss.clear();
@@ -247,7 +274,7 @@ void readSqlAndIndexing(std::string path, Database* db){
 
 
 
-            /*cria a tabela e a insere no banco de dados*/
+            ///cria a tabela e a insere no banco de dados///
             table = new Table(tableName, columns);
             db->insertNode(table);
             tokens.erase(tokens.begin(), tokens.begin());
@@ -259,11 +286,12 @@ void readSqlAndIndexing(std::string path, Database* db){
 
     file.clear();
 
-    //volta para o início do arquivo
+    ///volta para o início do arquivo
     file.seekg(0, std::ios::beg);
     tokens.erase(tokens.begin(), tokens.end());
 
      while(std::getline(file,line)){
+        ///achou onde estão os registros
         if(line.find("COPY") == 0){
 
             data = line;
@@ -280,7 +308,7 @@ void readSqlAndIndexing(std::string path, Database* db){
                 tokens.push_back(tableName);
             }
 
-            /*pega o nome da tabela*/
+            ///pega o nome da tabela///
             std::string t = tokens[0];
             ss.str("");
             ss.clear();
@@ -318,7 +346,7 @@ void readSqlAndIndexing(std::string path, Database* db){
                         --i;
                     }
                 }
-
+                ///insere o registro no banco de dados
                 Record* r = new Record();
                 r->setValues(tokens);
                 db->insertRecord(tableName, r);
@@ -333,18 +361,6 @@ void readSqlAndIndexing(std::string path, Database* db){
 
 
     }
-    clock_t end = clock();
-    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    std::cout<<"Time elapsed: " <<time_spent<<std::endl;
 
-
-    db->getDatabaseColisions();
-    begin = clock();
-    db->getAllData();
-    end = clock();
-    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    std::cout<<std::endl;
-    std::cout<<"Time elapsed: " <<time_spent<<std::endl;
-    delete db;
 
 }

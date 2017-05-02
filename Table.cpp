@@ -7,47 +7,52 @@
 #include <sstream>
 #include <fstream>
 
+///retorna o nome da tabela
 std::string Table::getName(){
     return this->name;
 }
+///retorna as colunas da tabela
 std::vector<std::string>& Table::getColumns()
 {
     return this->columns;
 }
 
+///retorna um ponteiro para o próximo nó da tabela na lista de tabelas do bando de dados
 Table* Table::getNext()
 {
     return this->next;
 }
 
+///retorna a tabela de hash da tabela
 Record** Table::getRecords()
 {
     return this->records;
 }
 
+///atribui um nome para a tabela
 void Table::setName(std::string name)
 {
     this->name = name;
 }
 
+///atribui as colunas da tabela
 void Table::setColumns(std::vector<std::string> columns)
 {
     this->columns = columns;
 }
 
-void Table::setRecords(Record** reg)
-{
-    this->records = reg;
-}
+///atribui o próximo nó à tabela na lista de tabelas do banco de dados
 void Table::setNext(Table* next)
 {
     this->next = next;
 }
+///calcula o hash de divisão para o valor gerado pela funç
 int Table::hashFunction(long long int k)
 {
         return k%TSIZE;
 }
 
+///algoritmo de hash que mapeia strings em inteiros
 long long int Table::djb2(std::string id)
 {
 
@@ -56,11 +61,15 @@ long long int Table::djb2(std::string id)
     char* str = (char*)id.c_str();
     while (c = *str++)
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    ///para caso ocorra overflow na variavel
+    if(hash < 0)
+        hash*= -1;
+
     return hash;
 }
 
 
-
+/// insere um registro na tabela
 void Table::insertRecord(Record* reg)
 {
 
@@ -70,31 +79,37 @@ void Table::insertRecord(Record* reg)
     unsigned long hash = 0;
 
     std::vector<std::string> values = reg->getValues();
+
+    ///tem pelo menos uma chave primária definida?
     if(primaryKeysIndex.size() > 0){
         for(int i = 0; i < primaryKeysIndex.size(); ++ i){
 
             aux = values[primaryKeysIndex[i]];
+            ///elimina algum espaço que pode vir do arquivo
             aux.erase(std::remove(aux.begin(), aux.end(), ' '), aux.end());
             reg->getValues().at(primaryKeysIndex[i]) = aux;
-
+            ///acumula o valor de hash para cada uma das chaves que constitui a chave primária
             hash+= djb2(aux);
 
         }
     }else{
+        ///se não tem definição de chave primária, como o caso da tabela foot_note, define que o primeiro campo será chave
         primaryKeysIndex.push_back(0);
         hash = djb2(reg->getValues().at(0));
     }
 
 
-
+    ///o número de valores passados no registro é igual ao número de colunas da tabela?
     if(values.size() == this->n_columns){
+        ///calcula o hash de divisão para o valor de hash obtido pelo hash djb2
         k = hashFunction(hash);
-
+        ///posição está vazia?
         if(this->records[k] == NULL){
-
+            ///insere o registro na posição da tabela e atribui seu próximo como nulo
             reg->setNext(NULL);
             this->records[k] = reg;
         }else{
+            ///chama a função de inserção auxiliar que irá inserir o registro na lista encadeada de colisões
             this->colisions+=1;
             insertAux(records[k], reg);
         }
@@ -104,9 +119,16 @@ void Table::insertRecord(Record* reg)
         perror ("Número errado de colunas");
     }
     this->records_number+=1;
-    writePrimaryKeyFile(reg);
+
 
 }
+
+/***
+    Description:
+        procura um registro na tabela
+    Params:
+        id - chave para busca do registro, se for chave composta, as chaves são passadas separadas por espaço
+***/
 Record* Table::searchRecord(std::string id)
 {
 
@@ -114,18 +136,24 @@ Record* Table::searchRecord(std::string id)
     std::stringstream ss;
     ss.str(id);
     unsigned long hash = 0;
+    ///as chaves compostas são passadas com espaço separando, esse loop quebra essas chaves e calcula o valor de djb2 para
+    ///cada uma delas e acumula em uma variável
     while(getline(ss, aux, ' ')){
         hash+= djb2(aux);
     }
+    ///retira o espaço separador das chaves de busca, o que acaba concatenado elas
     id.erase(std::remove(id.begin(), id.end(), ' '), id.end());
 
-
+    ///calcula o hash de divisão para o valor de djb2 resultado
     int k = hashFunction(hash);
+    ///a posição está vazia? se estiver o registro não existe
     if(records[k] == NULL) return NULL;
-
+    ///concatena as chaves primárias do registro da posição k, se ela for igual a chave de busca concatenada achou o registro
     if(concatComposeKey(records[k]) == id){
         return records[k];
     }else{
+        ///caso contrário é preciso percorrer a lista de colisões da posição k até que se ache o registro ou chegue ao final
+        ///da lista
         Record* r = records[k]->getNext();
         while(r != NULL){
             if(concatComposeKey(r)== id){
@@ -138,16 +166,23 @@ Record* Table::searchRecord(std::string id)
     }
 }
 
+/**
+    Params:
+    p: primeiro elemento da lista encadeada da posição da tabela onde ocorreu colisão
+    n: registro que sera inserido
+**/
 void Table::insertAux(Record* p, Record* n)
 {
+    ///vai ate o fim da tabela
     while(p->getNext() != NULL)
         p = p->getNext();
-
+    ///atribui o proximo do novo registro como nulo
     n->setNext(NULL);
+    ///atribui o proximo do ultimo no da lista como o novo registro
     p->setNext(n);
 }
 
-
+///construtor, inicializa os campos e aloca o que é necessário
 Table::Table(std::string name, std::vector<std::string> columns)
 {
     this->records = new Record*[TSIZE];
@@ -162,7 +197,7 @@ Table::Table(std::string name, std::vector<std::string> columns)
     this->records_number = 0;
 }
 
-
+///destrutor: percorre a lista encadeada de todas as entradas da tabela desalocando seus nós, no final desaloca o vetor
 Table::~Table()
 {
     Record* p;
@@ -178,6 +213,7 @@ Table::~Table()
     delete []records;
 }
 
+///recebe as definições de chave primária a cria um vetor de indices que indexa as colunas que sao chave primarias
 void Table::setPrimaryKeys(std::vector<std::string> columns_primary)
 {
 
@@ -191,6 +227,7 @@ void Table::setPrimaryKeys(std::vector<std::string> columns_primary)
 
 
 }
+///concatena as chaves primárias de uma tabela
 std::string Table::concatComposeKey(Record* r)
 {
     std::string result ="";
@@ -209,7 +246,7 @@ int Table::getRecordsNumber()
     return this->records_number;
 }
 
-
+///função utilizada somente pra auxiliar nos experimentos
 void Table::writePrimaryKeyFile(Record* rec)
 {
     std::ofstream f;
@@ -232,6 +269,7 @@ void Table::setPrimaryKeyIndex(std::vector<int>index)
 {
     this->primaryKeysIndex = index;
 }
+
 
 void Table::printResult(Record* rec)
 {

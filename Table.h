@@ -9,11 +9,13 @@ class Table{
     private:
         int n_columns;
         std::string name;
+        ///colunas da tabela
         std::vector<std::string> columns;
         int colisions;
         int records_number;
         Table* next;
         Record** records;
+        ///indice os campos que são chaves primárias em columns
         std::vector<int> primaryKeysIndex;
 
         std::string concatComposeKey(Record* r);
@@ -37,7 +39,7 @@ class Table{
         void setPrimaryKeys(std::vector<std::string> columns);
         void setName(std::string name);
         void setColumns(std::vector<std::string> columns);
-        void setRecords(Record** reg);
+
         void setNext(Table* next);
         void insertRecord(Record* reg);
         void printResult(Record* rec);
