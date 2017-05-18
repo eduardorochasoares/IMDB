@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 
+
 ///retorna o nome da tabela
 std::string Table::getName(){
     return this->name;
@@ -17,7 +18,7 @@ std::vector<std::string>& Table::getColumns()
     return this->columns;
 }
 
-///retorna um ponteiro para o próximo nó da tabela na lista de tabelas do bando de dados
+///retorna um ponteiro para o próximo nó da tabela na lista de tabelas do banco de dados
 Table* Table::getNext()
 {
     return this->next;
@@ -165,6 +166,43 @@ Record* Table::searchRecord(std::string id)
         return NULL;
     }
 }
+void Table::removeRecord(std::string id)
+{
+    Record* r = searchRecord(id);
+    if(r == NULL){
+        std::cout<<"Registro inexistente"<<std::endl;
+        return;
+    }
+    std::string aux;
+    std::stringstream ss;
+    ss.str(id);
+    unsigned long hash = 0;
+    ///as chaves compostas são passadas com espaço separando, esse loop quebra essas chaves e calcula o valor de djb2 para
+    ///cada uma delas e acumula em uma variável
+    while(getline(ss, aux, ' ')){
+        hash+= djb2(aux);
+    }
+    ///retira o espaço separador das chaves de busca, o que acaba concatenado elas
+    id.erase(std::remove(id.begin(), id.end(), ' '), id.end());
+
+    ///calcula o hash de divisão para o valor de djb2 resultado
+    int k = hashFunction(hash);
+    ///é o primeiro da lista
+    if(r == this->records[k]){
+        this->records[k] = r->getNext();
+        delete r;
+    ///caso contrario
+    }else if(r->getNext() == NULL){
+        Record* p = records[k];
+        while(p->getNext() != r){
+            p = p->getNext();
+        }
+        p->setNext(r->getNext());
+        delete r;
+    }
+}
+
+
 
 /**
     Params:
@@ -270,6 +308,78 @@ void Table::setPrimaryKeyIndex(std::vector<int>index)
     this->primaryKeysIndex = index;
 }
 
+void Table::selectCount()
+{
+    int count = 0;
+    for(int i = 0; i < TSIZE; ++i){
+        ///entrada i da tabela de hash não está vazia
+        if(records[i] != NULL){
+            count++;
+            ///percorre a lista de colisoes da posicao i
+            Record* p = records[i]->getNext();
+            while(p != NULL){
+                count++;
+                p = p->getNext();
+            }
+        }
+    }
+    std::cout<<count<<" registros encontrados para esta consulta."<<std::endl;
+
+}
+
+void Table::selectCountByField(std::string field, std::string value)
+{
+    int count = 0;
+
+    int columnIndex = this->getFieldIndex(field);
+
+    if(columnIndex == -1){
+        std::cout<<"Campo inexistente na tabela " <<this->name<<std::endl;
+        return;
+    }
+    std::vector<std::string> values;
+    for(int i = 0; i < TSIZE; ++i){
+
+        if(records[i] != NULL){
+            values = records[i]->getValues();
+            if(values[columnIndex] == value){
+                count++;
+            }
+            Record* p = records[i]->getNext();
+            while(p != NULL){
+                values = p->getValues();
+                if(values[columnIndex] == value){
+                    count++;
+                }
+                p = p->getNext();
+            }
+
+        }
+    }
+
+    std::cout<<count<<" registros encontrados para esta consulta."<<std::endl;
+}
+
+
+std::vector<Record*> Table::moveRecToVector()
+{
+    std::vector<Record*> auxVector;
+    int count = 0;
+    for(int i = 0; i < TSIZE; ++i){
+        ///entrada i da tabela de hash não está vazia
+        if(records[i] != NULL){
+            auxVector.push_back(records[i]);
+            ///percorre a lista de colisoes da posicao i
+            Record* p = records[i]->getNext();
+            while(p != NULL){
+                auxVector.push_back(p);
+                p = p->getNext();
+            }
+        }
+    }
+    return auxVector;
+}
+
 
 void Table::printResult(Record* rec)
 {
@@ -285,4 +395,16 @@ void Table::printResult(Record* rec)
     for(int i = 0; i < values.size(); ++i)
         std::cout<<values[i]<<" ";
     std::cout<<std::endl;
+}
+
+int Table::getFieldIndex(std::string field)
+{
+    int columnIndex = -1;
+    for(int i = 0; i < columns.size(); ++i){
+        if(field == columns[i]){
+            columnIndex = i;
+            break;
+        }
+    }
+    return columnIndex;
 }

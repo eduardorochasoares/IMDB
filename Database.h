@@ -17,6 +17,9 @@ class Database{
         void setDescriptor(Table* descriptor);
         void insertNode(Table* tableNode);
 
+        void innerJoin(Table* t1, Table* t2, std::string field);
+        void outerJoin(Table* t1, Table* t2, std::string field);
+
         void getAllData();
         ~Database();
 

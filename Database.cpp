@@ -2,6 +2,16 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+struct Local{
+    Local(int param1){
+        this->param1 = param1;
+
+    }
+    bool operator() (Record* r1, Record* r2){
+        return r1->getValues().at(param1) < r2->getValues().at(param1);
+    }
+    int param1;
+};
 ///retorna um ponteiro para o primeiro elemento da lista de tabelas do banco de dados
 Table* Database::getDescriptor()
 {
@@ -107,6 +117,7 @@ Record* Database::searchRecord(std::string tableName, std::string id)
 
 }
 
+
 /***
     Description:
         Altera uma tabela definindo alguns de seus campos como chave primária
@@ -202,4 +213,169 @@ Database::~Database()
         delete p;
         p = aux;
     }
+}
+
+
+void Database::outerJoin(Table* t1, Table* t2, std::string field)
+{
+    int fieldIndexT1 = t1->getFieldIndex(field);
+    int fieldIndexT2 = t2->getFieldIndex(field);
+    std::vector<std::string> rows;
+    int current = 0;
+    int previousInital = 0;
+    std::vector<Record*> vecT1 = t1->moveRecToVector();
+    std::sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
+
+    std::vector<Record*> vecT2 = t2->moveRecToVector();
+    std::sort(vecT2.begin(), vecT2.end(), Local(fieldIndexT2));
+
+    std::cout<<vecT1.size() <<" "<<vecT2.size()<<std::endl;
+    int i;
+    for(i = 0; i < vecT1.size(); ++i){
+        if(i > 0){
+            if(vecT1[i]->getValues().at(fieldIndexT1) == vecT1[i - 1]->getValues().at(fieldIndexT1)){
+                current = previousInital;
+            }else{
+                previousInital = current;
+
+            }
+        }
+        std::string left ="";
+        std::string right = "";
+        std::string row = "";
+        std::vector<std::string> valuesT1 = vecT1[i]->getValues();
+        for(int j = 0; j < valuesT1.size(); ++j){
+            left+=valuesT1[j] + '\t';
+        }
+        if(current < vecT2.size()){
+            std::cout<<current<<std::endl;
+            std::vector<std::string> valuesT2 = vecT2[current]->getValues();
+            ///std::cout<<valuesT1[fieldIndexT1] + "|" + valuesT2[fieldIndexT2]<<std::endl;
+
+            if(valuesT1[fieldIndexT1] != valuesT2[fieldIndexT2]){
+                    while(valuesT1[fieldIndexT1] > valuesT2[fieldIndexT2]){
+                        ++current;
+
+                        if(current >= vecT2.size())
+                            break;
+
+                        valuesT2 = vecT2[current]->getValues();
+
+                    }
+
+                    previousInital = current;
+
+            }
+
+            if(valuesT1[fieldIndexT1] < valuesT2[fieldIndexT2]){
+                rows.push_back(left + "|" + "NULL");
+            }else{
+                while(valuesT1[fieldIndexT1] == valuesT2[fieldIndexT2]){
+                    right ="";
+                    for(int j = 0; j < valuesT2.size(); ++j){
+                        right+=valuesT2[j] + '\t';
+                    }
+                    rows.push_back(left + "|" + right);
+
+                    ++current;
+
+                    if(current >= vecT2.size())
+                        break;
+
+                    valuesT2 = vecT2[current]->getValues();
+                }
+            }
+
+        }else{
+            rows.push_back(left + "|" + "NULL");
+        }
+
+
+
+
+
+    }
+    std::cout<<"Linhas retornadas: "<< rows.size()<<std::endl;
+
+  /*for(int i = 0; i < rows.size(); ++i)
+        std::cout<<rows[i]<<std::endl;*/
+
+}
+
+void Database::innerJoin(Table* t1, Table* t2, std::string field)
+{
+    int fieldIndexT1 = t1->getFieldIndex(field);
+    int fieldIndexT2 = t2->getFieldIndex(field);
+    std::vector<std::string> rows;
+    int current = 0;
+    int previousInital = 0;
+    std::vector<Record*> vecT1 = t1->moveRecToVector();
+    std::sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
+    /*for(int i = 0; i < vecT1.size(); ++i)
+        std::cout<<vecT1[i]->getValues().at(fieldIndexT1)<<std::endl;
+*/
+    std::vector<Record*> vecT2 = t2->moveRecToVector();
+    std::sort(vecT2.begin(), vecT2.end(), Local(fieldIndexT2));
+    /*for(int i = 0; i < vecT2.size(); ++i)
+        std::cout<<vecT2[i]->getValues().at(fieldIndexT2)<<std::endl;*/
+    std::cout<<vecT1.size() <<" "<<vecT2.size()<<std::endl;
+    int i;
+    for(i = 0; i < vecT1.size(); ++i){
+        if(i > 0){
+            if(vecT1[i]->getValues().at(fieldIndexT1) == vecT1[i - 1]->getValues().at(fieldIndexT1)){
+                current = previousInital;
+            }else{
+                previousInital = current;
+
+            }
+        }
+        std::string left ="";
+        std::string right = "";
+        std::string row = "";
+        std::vector<std::string> valuesT1 = vecT1[i]->getValues();
+        for(int j = 0; j < valuesT1.size(); ++j){
+            left+=valuesT1[j] + '\t';
+        }
+        if(current >= vecT2.size())
+            break;
+
+        std::vector<std::string> valuesT2 = vecT2[current]->getValues();
+        ///std::cout<<valuesT1[fieldIndexT1] + "|" + valuesT2[fieldIndexT2]<<std::endl;
+
+        if(valuesT1[fieldIndexT1] != valuesT2[fieldIndexT2]){
+              while(valuesT1[fieldIndexT1] > valuesT2[fieldIndexT2]){
+                    ++current;
+                    if(current >= vecT2.size())
+                            break;
+
+                    valuesT2 = vecT2[current]->getValues();
+                }
+                previousInital = current;
+        }
+
+        while(valuesT1[fieldIndexT1] == valuesT2[fieldIndexT2]){
+            right ="";
+            for(int j = 0; j < valuesT2.size(); ++j){
+                right+=valuesT2[j] + '\t';
+            }
+            rows.push_back(left + "|" + right);
+
+            ++current;
+
+            if(current >= vecT2.size())
+                break;
+
+            valuesT2 = vecT2[current]->getValues();
+        }
+
+
+
+
+
+    }
+    std::cout<<"Linhas retornadas: "<< rows.size()<<std::endl;
+
+  /*for(int i = 0; i < rows.size(); ++i)
+        std::cout<<rows[i]<<std::endl;*/
+
 }

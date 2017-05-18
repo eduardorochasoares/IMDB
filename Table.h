@@ -24,7 +24,11 @@ class Table{
         void insertAux(Record* p, Record* n);
         void writePrimaryKeyFile(Record* reg);
 
+
+
     public:
+        int getFieldIndex(std::string field);
+        std::vector<Record*> moveRecToVector();
         Table(std::string name, std::vector<std::string> columns);
         std::string getName();
         std::vector<std::string>& getColumns();
@@ -43,7 +47,10 @@ class Table{
         void setNext(Table* next);
         void insertRecord(Record* reg);
         void printResult(Record* rec);
+        void removeRecord(std::string id);
 
+        void selectCount();
+        void selectCountByField(std::string field, std::string value);
         ~Table();
 };
 

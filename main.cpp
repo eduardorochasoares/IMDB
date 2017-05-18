@@ -27,6 +27,9 @@ int main()
         std::cout<<"2 - Criar uma tabela manualmente"<<std::endl;
         std::cout<<"3 - Inserir registros em uma tabela manualmente"<<std::endl;
         std::cout<<"4 - Buscar um registro"<<std::endl;
+        std::cout<<"5 - Remover um registro"<<std::endl;
+        std::cout<<"6 - SELECT COUNT(*) FROM TABLE;"<<std::endl;
+        std::cout<<"7 - SELECT COUNT(*) FROM TABLE WHERE ID = X;"<<std::endl;
         std::cout<<"9 - Sair"<<std::endl;
         std::cin >> opt;
 
@@ -113,7 +116,7 @@ int main()
                 break;
             }
 
-            case 4:
+            case 4:{
                 std::string tableName;
                 std::cout<<"Digite o nome da tabela onde a busca sera feita"<<std::endl;
                 std::cin >> tableName;
@@ -147,6 +150,111 @@ int main()
                     std::cout<<std::endl;
                 }
                 break;
+            }
+
+            case 5:{
+                std::string tableName;
+
+                std::cout<<"Digite o nome da tabela onde ocorrerá a remoção"<<std::endl;
+                std::cin >> tableName;
+
+                Table* t = db->searchTable(tableName);
+
+                if(t == NULL){
+                    std::cout<<"Tabela inexistente no banco de dados"<<std::endl;
+                }else{
+                    int count = 0;
+                    std::string aux;
+                    std::string values;
+                    std::vector<std::string> columns;
+                    std::vector<int> indexPrimaryKeys = t->getPrimaryKeyIndex();
+                    columns = t->getColumns();
+                    std::cout<<"A tabela selecionada tem os ćampos abaixo como chave primaria, caso seja mais de uma digite os valores em uma única linha separados por espaco."<<std::endl;
+                    std::cout<<"Campos de chave primaria: ";
+                    for(int i = 0; i < indexPrimaryKeys.size(); ++i){
+                        std::cout<<columns[indexPrimaryKeys[i]]<<" ";
+                        ++count;
+                    }
+                    std::cout<<std::endl;
+                    std::cin.ignore();
+                    std::getline (std::cin, aux);
+
+
+
+
+                    t->removeRecord(aux);
+                    std::cout<<std::endl;
+                    std::cout<<"Registro Removido com sucesso"<<std::endl;
+                    std::cout<<std::endl;
+                    std::cout<<std::endl;
+
+
+                }
+                break;
+            }
+
+            case 6:{
+                std::string tableName;
+
+                std::cout<<"Digite o nome da tabela onde a consulta será realizada"<<std::endl;
+                std::cin >> tableName;
+
+                Table* t = db->searchTable(tableName);
+
+                if(t == NULL){
+                    std::cout<<"Tabela inexistente no banco de dados"<<std::endl;
+                }else{
+                    t->selectCount();
+                }
+                break;
+            }
+
+            case 7:{
+                std::string tableName;
+                std::string aux;
+                std::stringstream ss;
+                std::cout<<"Digite o nome da tabela onde a consulta será realizada"<<std::endl;
+                std::cin >> tableName;
+                std::vector<std::string> columns;
+
+                Table* t = db->searchTable(tableName);
+
+                if(t == NULL){
+                    std::cout<<"Tabela inexistente no banco de dados"<<std::endl;
+                }else{
+                    columns = t->getColumns();
+                    std::cout<<"Os campos da tabela são: "<<std::endl;
+                    for(int i = 0; i < columns.size(); ++i)
+                        std::cout<<columns[i]<<"\t"<<std::endl;
+
+                    std::cout<<"Entre com o nome de um desses campos para realizar a contagem seguido do valor a ser comparado separado por um espaço "<<std::endl;
+                    std::cin.ignore();
+                    std::getline (std::cin, aux);
+                    ss.str(aux);
+                    std::string field;
+                    std::string value;
+
+                    getline(ss, aux, ' ');
+                    field = aux;
+                    std::cout<<field<<std::endl;
+                    getline(ss, aux, ' ');
+                    value = aux;
+                    field.erase(std::remove(field.begin(), field.end(), ' '), field.end());
+                    value.erase(std::remove(value.begin(), value.end(), ' '), value.end());
+
+
+                    t->selectCountByField(field, value);
+                }
+                break;
+            }
+
+            case 8:{
+                std::string table1 = "nut_data";
+                std::string table2 = "datsrcln";
+                std::string field = "ndb_no";
+                db->outerJoin(db->searchTable(table2), db->searchTable(table1), field);
+                break;
+            }
 
         }
 
