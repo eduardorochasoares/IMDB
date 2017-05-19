@@ -216,20 +216,36 @@ Database::~Database()
 }
 
 
-void Database::outerJoin(Table* t1, Table* t2, std::string field)
+void Database::outerJoin(Table* t1, Table* t2, std::string field, char type)
 {
-    int fieldIndexT1 = t1->getFieldIndex(field);
-    int fieldIndexT2 = t2->getFieldIndex(field);
+
+    int fieldIndexT1;
+    int fieldIndexT2;
     std::vector<std::string> rows;
     int current = 0;
     int previousInital = 0;
-    std::vector<Record*> vecT1 = t1->moveRecToVector();
-    std::sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
+    std::vector<Record*> vecT1;
+    std::vector<Record*> vecT2;
 
-    std::vector<Record*> vecT2 = t2->moveRecToVector();
+    if(type == 'R'){
+        vecT1 = t2->moveRecToVector();
+        vecT2 = t1->moveRecToVector();
+
+        fieldIndexT1 = t2->getFieldIndex(field);
+        fieldIndexT2 = t1->getFieldIndex(field);
+    }else{
+        vecT1 = t1->moveRecToVector();
+        vecT2 = t2->moveRecToVector();
+
+
+        fieldIndexT1 = t1->getFieldIndex(field);
+        fieldIndexT2 = t2->getFieldIndex(field);
+    }
+
+    std::sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
     std::sort(vecT2.begin(), vecT2.end(), Local(fieldIndexT2));
 
-    std::cout<<vecT1.size() <<" "<<vecT2.size()<<std::endl;
+
     int i;
     for(i = 0; i < vecT1.size(); ++i){
         if(i > 0){
@@ -248,12 +264,16 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field)
             left+=valuesT1[j] + '\t';
         }
         if(current < vecT2.size()){
-            std::cout<<current<<std::endl;
             std::vector<std::string> valuesT2 = vecT2[current]->getValues();
-            ///std::cout<<valuesT1[fieldIndexT1] + "|" + valuesT2[fieldIndexT2]<<std::endl;
 
             if(valuesT1[fieldIndexT1] != valuesT2[fieldIndexT2]){
+
                     while(valuesT1[fieldIndexT1] > valuesT2[fieldIndexT2]){
+
+                        if(type == 'F'){
+                            rows.push_back("NULL |" + right);
+                        }
+
                         ++current;
 
                         if(current >= vecT2.size())
@@ -268,7 +288,13 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field)
             }
 
             if(valuesT1[fieldIndexT1] < valuesT2[fieldIndexT2]){
-                rows.push_back(left + "|" + "NULL");
+                if(type == 'R'){
+                   rows.push_back("NULL |" + left);
+
+                }else{
+                    rows.push_back  (left + "| NULL");
+                }
+
             }else{
                 while(valuesT1[fieldIndexT1] == valuesT2[fieldIndexT2]){
                     right ="";
@@ -287,7 +313,11 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field)
             }
 
         }else{
-            rows.push_back(left + "|" + "NULL");
+            if(type == 'R'){
+                rows.push_back("NULL |"  + left);
+            }else{
+                rows.push_back(left + "| NULL");
+            }
         }
 
 

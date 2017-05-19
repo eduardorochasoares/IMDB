@@ -73,6 +73,7 @@ int main()
                     columns.push_back(aux);
                     ++i;
                 }
+
                 table = new Table(name, columns);
                 table->setPrimaryKeyIndex(primaryKeysIndex);
 
@@ -249,10 +250,11 @@ int main()
             }
 
             case 8:{
-                std::string table1 = "nut_data";
-                std::string table2 = "datsrcln";
+                std::string table1 = "datsrcln";
+                std::string table2 = "nut_data";
                 std::string field = "ndb_no";
-                db->outerJoin(db->searchTable(table2), db->searchTable(table1), field);
+
+                db->outerJoin(db->searchTable(table1), db->searchTable(table2), field, 'F');
                 break;
             }
 

@@ -18,7 +18,7 @@ class Database{
         void insertNode(Table* tableNode);
 
         void innerJoin(Table* t1, Table* t2, std::string field);
-        void outerJoin(Table* t1, Table* t2, std::string field);
+        void outerJoin(Table* t1, Table* t2, std::string field, char type);
 
         void getAllData();
         ~Database();
