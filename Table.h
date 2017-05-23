@@ -7,6 +7,7 @@
 
 class Table{
     private:
+        int t_size;
         int n_columns;
         std::string name;
         ///colunas da tabela
@@ -27,7 +28,7 @@ class Table{
 
 
     public:
-        int getFieldIndex(std::string field);
+        std::vector<int> getFieldIndex(std::vector<std::string> field);
         std::vector<Record*> moveRecToVector();
         Table(std::string name, std::vector<std::string> columns);
         std::string getName();
@@ -38,6 +39,7 @@ class Table{
         int getColisionsNumber();
         int getRecordsNumber();
         std::vector<int> getPrimaryKeyIndex();
+        int getTsize();
 
         void setPrimaryKeyIndex(std::vector<int> index);
         void setPrimaryKeys(std::vector<std::string> columns);
@@ -50,7 +52,7 @@ class Table{
         void removeRecord(std::string id);
 
         void selectCount();
-        void selectCountByField(std::string field, std::string value);
+        void selectCountByFields(std::vector<std::string >field, std::vector<std::string> value);
         ~Table();
 };
 

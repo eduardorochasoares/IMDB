@@ -7,6 +7,8 @@
 #include <iterator>
 #include <time.h>
 #include <climits>
+#include <stdlib.h>
+#include <time.h>
 
 
 
@@ -17,7 +19,9 @@ void readSqlAndIndexing(std::string path, Database* db);
     Menu que permite ao usuário escolher uma ação a ser tomada
 **/
 int main()
+
 {
+    srand(time(NULL));
     Database* db = new Database();
     int opt;
     std::string path = "";
@@ -100,8 +104,10 @@ int main()
                 }
                 std::cout<<"Digite em uma única linha separado por espaco o valor dos seguintes campos (em ordem):"<<std::endl;
                 std::vector<std::string> fields = t->getColumns();
+
                 for(int i = 0; i < fields.size(); ++i)
                     std::cout<<fields[i]<<" ";
+
                 std::cout<<std::endl;
                 std::cin.ignore();
                 std::getline (std::cin, aux);
@@ -214,6 +220,8 @@ int main()
                 std::string tableName;
                 std::string aux;
                 std::stringstream ss;
+                std::vector<std::string> fields;
+                std::vector<std::string> values;
                 std::cout<<"Digite o nome da tabela onde a consulta será realizada"<<std::endl;
                 std::cin >> tableName;
                 std::vector<std::string> columns;
@@ -228,33 +236,47 @@ int main()
                     for(int i = 0; i < columns.size(); ++i)
                         std::cout<<columns[i]<<"\t"<<std::endl;
 
-                    std::cout<<"Entre com o nome de um desses campos para realizar a contagem seguido do valor a ser comparado separado por um espaço "<<std::endl;
+                    std::cout<<"Entre com o nome de um ou mais desses campos para realizar a contagem"<<std::endl;
                     std::cin.ignore();
+
                     std::getline (std::cin, aux);
                     ss.str(aux);
-                    std::string field;
-                    std::string value;
 
-                    getline(ss, aux, ' ');
-                    field = aux;
-                    std::cout<<field<<std::endl;
-                    getline(ss, aux, ' ');
-                    value = aux;
-                    field.erase(std::remove(field.begin(), field.end(), ' '), field.end());
-                    value.erase(std::remove(value.begin(), value.end(), ' '), value.end());
+                    while(getline(ss, aux, ' ')){
+                        fields.push_back(aux);
+
+                    }
+
+                    std::cout<<"Entre com os valores dos campos de busca definidos acima, separados por espaço, e na ordem que os campos foram definidos para busca"<<std::endl;
+
+                    std::string a;
+                    std::getline (std::cin, a);
 
 
-                    t->selectCountByField(field, value);
+                    ss.str("");
+                    ss.clear();
+                    ss.str(a);
+                    while(getline(ss, a, ' ')){
+                        values.push_back(a);
+
+                    }
+                    std::cout<<"values size: "<<values.size();
+
+
+                    t->selectCountByFields(fields, values);
                 }
                 break;
             }
 
             case 8:{
-                std::string table1 = "datsrcln";
-                std::string table2 = "nut_data";
-                std::string field = "ndb_no";
+                std::string table1 = "data_src";
+                std::string table2 = "datsrcln";
+                std::string field = "datasrc_id";
+                std::vector<std::string> fields;
+                fields.push_back(field);
 
-                db->outerJoin(db->searchTable(table1), db->searchTable(table2), field, 'F');
+
+                db->outerJoinNxM(db->searchTable(table1), db->searchTable(table2), fields, 'R');
                 break;
             }
 

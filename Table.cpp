@@ -6,7 +6,7 @@
 #include <math.h>
 #include <sstream>
 #include <fstream>
-
+#include "Database.h"
 
 ///retorna o nome da tabela
 std::string Table::getName(){
@@ -223,6 +223,7 @@ void Table::insertAux(Record* p, Record* n)
 ///construtor, inicializa os campos e aloca o que é necessário
 Table::Table(std::string name, std::vector<std::string> columns)
 {
+    this->t_size = TSIZE;
     this->records = new Record*[TSIZE];
     this->n_columns = columns.size();
     this->name = name;
@@ -327,13 +328,17 @@ void Table::selectCount()
 
 }
 
-void Table::selectCountByField(std::string field, std::string value)
+void Table::selectCountByFields(std::vector<std::string> field, std::vector<std::string> value)
 {
     int count = 0;
+    std::string concatValues = "";
 
-    int columnIndex = this->getFieldIndex(field);
 
-    if(columnIndex == -1){
+    std::vector<int> columnIndex = this->getFieldIndex(field);
+    for(int i = 0; i < value.size(); ++i)
+        concatValues += value[i];
+
+    if(columnIndex.empty()){
         std::cout<<"Campo inexistente na tabela " <<this->name<<std::endl;
         return;
     }
@@ -341,14 +346,14 @@ void Table::selectCountByField(std::string field, std::string value)
     for(int i = 0; i < TSIZE; ++i){
 
         if(records[i] != NULL){
-            values = records[i]->getValues();
-            if(values[columnIndex] == value){
+
+            std::cout<<Database::concatFieldsValue(records[i], columnIndex) <<"aa " <<concatValues<<std::endl;
+            if(Database::concatFieldsValue(records[i], columnIndex) == concatValues){
                 count++;
             }
             Record* p = records[i]->getNext();
             while(p != NULL){
-                values = p->getValues();
-                if(values[columnIndex] == value){
+                if(Database::concatFieldsValue(p, columnIndex) == concatValues){
                     count++;
                 }
                 p = p->getNext();
@@ -397,14 +402,21 @@ void Table::printResult(Record* rec)
     std::cout<<std::endl;
 }
 
-int Table::getFieldIndex(std::string field)
+std::vector<int> Table::getFieldIndex(std::vector<std::string> field)
 {
-    int columnIndex = -1;
-    for(int i = 0; i < columns.size(); ++i){
-        if(field == columns[i]){
-            columnIndex = i;
-            break;
+    std::vector<int> indexes;
+
+    for(int j = 0; j < field.size(); ++j)
+        for(int i = 0; i < columns.size(); ++i){
+            if(field[j] == columns[i]){
+                indexes.push_back(i);
+
+            }
         }
-    }
-    return columnIndex;
+    return indexes;
+}
+
+int Table::getTsize()
+{
+    return this->t_size;
 }

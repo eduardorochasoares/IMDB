@@ -22,3 +22,13 @@ Record* Record::getNext()
 {
     return this->next;
 }
+
+bool Record::hasMatch()
+{
+    return this->match;
+}
+
+void Record::setMatch(bool match)
+{
+    this->match = match;
+}

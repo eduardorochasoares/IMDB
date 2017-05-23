@@ -1,16 +1,18 @@
 #include "Database.h"
 #include <stdio.h>
 #include <iostream>
+#include <stack>
 #include <fstream>
 struct Local{
-    Local(int param1){
+    Local(std::vector<int> param1){
         this->param1 = param1;
 
     }
     bool operator() (Record* r1, Record* r2){
-        return r1->getValues().at(param1) < r2->getValues().at(param1);
+
+        return Database::concatFieldsValue(r1, param1) < Database::concatFieldsValue(r2, param1);
     }
-    int param1;
+    std::vector<int> param1;
 };
 ///retorna um ponteiro para o primeiro elemento da lista de tabelas do banco de dados
 Table* Database::getDescriptor()
@@ -216,16 +218,19 @@ Database::~Database()
 }
 
 
-void Database::outerJoin(Table* t1, Table* t2, std::string field, char type)
+void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, char type)
 {
 
-    int fieldIndexT1;
-    int fieldIndexT2;
+    std::vector<int> fieldIndexT1;
+    std::vector<int> fieldIndexT2;
     std::vector<std::string> rows;
     int current = 0;
     int previousInital = 0;
     std::vector<Record*> vecT1;
     std::vector<Record*> vecT2;
+
+    std::vector<std::string> valuesT1;
+    std::vector<std::string> valuesT2;
 
     if(type == 'R'){
         vecT1 = t2->moveRecToVector();
@@ -248,8 +253,12 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field, char type)
 
     int i;
     for(i = 0; i < vecT1.size(); ++i){
+
         if(i > 0){
-            if(vecT1[i]->getValues().at(fieldIndexT1) == vecT1[i - 1]->getValues().at(fieldIndexT1)){
+            std::string values1 = concatFieldsValue(vecT1[i], fieldIndexT1);
+            std::string values2 = concatFieldsValue(vecT1[i - 1], fieldIndexT1);
+
+            if(values1 == values2){
                 current = previousInital;
             }else{
                 previousInital = current;
@@ -259,16 +268,26 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field, char type)
         std::string left ="";
         std::string right = "";
         std::string row = "";
-        std::vector<std::string> valuesT1 = vecT1[i]->getValues();
+
+        valuesT1 = vecT1[i]->getValues();
         for(int j = 0; j < valuesT1.size(); ++j){
             left+=valuesT1[j] + '\t';
         }
+
+        std::string t1FieldsValue = concatFieldsValue(vecT1[i], fieldIndexT1);
         if(current < vecT2.size()){
-            std::vector<std::string> valuesT2 = vecT2[current]->getValues();
 
-            if(valuesT1[fieldIndexT1] != valuesT2[fieldIndexT2]){
+            valuesT2 = vecT2[current]->getValues();
+            std::string t2FieldsValue = concatFieldsValue(vecT2[current], fieldIndexT2);
 
-                    while(valuesT1[fieldIndexT1] > valuesT2[fieldIndexT2]){
+            if(t1FieldsValue != t2FieldsValue){
+
+                    while(t1FieldsValue > t2FieldsValue){
+                        right ="";
+
+                        for(int j = 0; j < valuesT2.size(); ++j){
+                            right+=valuesT2[j] + '\t';
+                        }
 
                         if(type == 'F'){
                             rows.push_back("NULL |" + right);
@@ -279,6 +298,7 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field, char type)
                         if(current >= vecT2.size())
                             break;
 
+                        t2FieldsValue = concatFieldsValue(vecT2[current], fieldIndexT2);
                         valuesT2 = vecT2[current]->getValues();
 
                     }
@@ -287,7 +307,7 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field, char type)
 
             }
 
-            if(valuesT1[fieldIndexT1] < valuesT2[fieldIndexT2]){
+            if(t1FieldsValue < t2FieldsValue){
                 if(type == 'R'){
                    rows.push_back("NULL |" + left);
 
@@ -296,19 +316,22 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field, char type)
                 }
 
             }else{
-                while(valuesT1[fieldIndexT1] == valuesT2[fieldIndexT2]){
-                    right ="";
+                while(t1FieldsValue == t2FieldsValue){
+                    right = "";
                     for(int j = 0; j < valuesT2.size(); ++j){
                         right+=valuesT2[j] + '\t';
                     }
-                    rows.push_back(left + "|" + right);
+
+                     rows.push_back(left + "|" + right);
 
                     ++current;
 
                     if(current >= vecT2.size())
                         break;
 
+                    t2FieldsValue = concatFieldsValue(vecT2[current], fieldIndexT2);
                     valuesT2 = vecT2[current]->getValues();
+
                 }
             }
 
@@ -324,6 +347,23 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field, char type)
 
 
 
+
+    }
+    if(type == 'F'){
+        while(current < vecT2.size()){
+
+
+            if(current >= vecT2.size()) break;
+
+            valuesT2 = vecT2[current]->getValues();
+            std::string right = "";
+            for(int j = 0; j < valuesT2.size(); ++j){
+                right+=valuesT2[j] + '\t';
+            }
+
+            rows.push_back("NULL |"  + right);
+            ++current;
+        }
     }
     std::cout<<"Linhas retornadas: "<< rows.size()<<std::endl;
 
@@ -332,37 +372,44 @@ void Database::outerJoin(Table* t1, Table* t2, std::string field, char type)
 
 }
 
-void Database::innerJoin(Table* t1, Table* t2, std::string field)
+void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
 {
-    int fieldIndexT1 = t1->getFieldIndex(field);
-    int fieldIndexT2 = t2->getFieldIndex(field);
+    std::vector<int> fieldIndexT1 = t1->getFieldIndex(field);
+    std::vector<int> fieldIndexT2 = t2->getFieldIndex(field);
+
     std::vector<std::string> rows;
     int current = 0;
     int previousInital = 0;
+
     std::vector<Record*> vecT1 = t1->moveRecToVector();
-    std::sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
-    /*for(int i = 0; i < vecT1.size(); ++i)
-        std::cout<<vecT1[i]->getValues().at(fieldIndexT1)<<std::endl;
-*/
+    std::stable_sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
+
     std::vector<Record*> vecT2 = t2->moveRecToVector();
-    std::sort(vecT2.begin(), vecT2.end(), Local(fieldIndexT2));
-    /*for(int i = 0; i < vecT2.size(); ++i)
-        std::cout<<vecT2[i]->getValues().at(fieldIndexT2)<<std::endl;*/
-    std::cout<<vecT1.size() <<" "<<vecT2.size()<<std::endl;
+    std::stable_sort(vecT2.begin(), vecT2.end(), Local(fieldIndexT2));
+
+
+
     int i;
+
     for(i = 0; i < vecT1.size(); ++i){
         if(i > 0){
-            if(vecT1[i]->getValues().at(fieldIndexT1) == vecT1[i - 1]->getValues().at(fieldIndexT1)){
+            std::string values1 = concatFieldsValue(vecT1[i], fieldIndexT1);
+            std::string values2 = concatFieldsValue(vecT1[i - 1], fieldIndexT1);
+
+            if(values1 == values2){
                 current = previousInital;
             }else{
                 previousInital = current;
 
             }
         }
+
         std::string left ="";
         std::string right = "";
         std::string row = "";
         std::vector<std::string> valuesT1 = vecT1[i]->getValues();
+        std::string t1FieldsValues = concatFieldsValue(vecT1[i], fieldIndexT1);
+
         for(int j = 0; j < valuesT1.size(); ++j){
             left+=valuesT1[j] + '\t';
         }
@@ -370,24 +417,31 @@ void Database::innerJoin(Table* t1, Table* t2, std::string field)
             break;
 
         std::vector<std::string> valuesT2 = vecT2[current]->getValues();
-        ///std::cout<<valuesT1[fieldIndexT1] + "|" + valuesT2[fieldIndexT2]<<std::endl;
+        std::string t2FieldsValues = concatFieldsValue(vecT2[current], fieldIndexT2);
 
-        if(valuesT1[fieldIndexT1] != valuesT2[fieldIndexT2]){
-              while(valuesT1[fieldIndexT1] > valuesT2[fieldIndexT2]){
+        if(t1FieldsValues != t2FieldsValues){
+
+              while(t1FieldsValues > t2FieldsValues){
                     ++current;
+
                     if(current >= vecT2.size())
                             break;
 
+                    t2FieldsValues = concatFieldsValue(vecT2[current], fieldIndexT2);
                     valuesT2 = vecT2[current]->getValues();
+
+
                 }
                 previousInital = current;
         }
 
-        while(valuesT1[fieldIndexT1] == valuesT2[fieldIndexT2]){
+        while(t1FieldsValues == t2FieldsValues){
             right ="";
+
             for(int j = 0; j < valuesT2.size(); ++j){
                 right+=valuesT2[j] + '\t';
             }
+
             rows.push_back(left + "|" + right);
 
             ++current;
@@ -395,7 +449,9 @@ void Database::innerJoin(Table* t1, Table* t2, std::string field)
             if(current >= vecT2.size())
                 break;
 
+            t2FieldsValues = concatFieldsValue(vecT2[current], fieldIndexT2);
             valuesT2 = vecT2[current]->getValues();
+
         }
 
 
@@ -405,7 +461,188 @@ void Database::innerJoin(Table* t1, Table* t2, std::string field)
     }
     std::cout<<"Linhas retornadas: "<< rows.size()<<std::endl;
 
-  /*for(int i = 0; i < rows.size(); ++i)
-        std::cout<<rows[i]<<std::endl;*/
-
+   /* for(int i = 0; i < rows.size(); ++i)
+        std::cout<<"Linha"<< (i + 1) <<":  "<<rows[i]<<std::endl;
+*/
 }
+void Database::innerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field)
+{
+    Record** hashTable1 = t1->getRecords();
+    Record** hashTable2 = t2->getRecords();
+    std::vector<int> fieldIndexT1 = t1->getFieldIndex(field);
+    std::vector<int> fieldIndexT2 = t2->getFieldIndex(field);
+    std::vector<std::string> rows;
+    std::string left ="";
+    std::string right = "";
+    std::vector<std::string> valuesT1;
+    std::vector<std::string> valuesT2;
+    ///percorre as posições da tabela de hash de T1
+    for(int i = 0; i < t1->getTsize(); ++i){
+
+            if(hashTable1[i] != NULL){
+                Record* p1 = hashTable1[i];
+                ///percorre a lista de colisão da posição i de T1
+                while(p1 != NULL){
+                    left = "";
+                    valuesT1 = p1->getValues();
+
+
+                    for(int j = 0; j < valuesT1.size(); ++j){
+                            left+=valuesT1[j] + '\t';
+                    }
+
+                    ///percorre as posições da tabela de hash de T2
+                    for(int j = 0; j < t2->getTsize(); ++j){
+                        if(hashTable2[j] != NULL){
+
+                            Record* p2 = hashTable2[j];
+                            ///percorre a lista de colisão da posição j de T2
+
+                            while(p2 != NULL){
+                                if(concatFieldsValue(p1, fieldIndexT1 ) == concatFieldsValue(p2, fieldIndexT2)){
+                                        valuesT2 = p2->getValues();
+
+                                       right = "";
+                                       for(int k = 0; k < valuesT2.size(); ++k){
+                                            right+=valuesT2[k] + '\t';
+                                        }
+                                        rows.push_back(left + "|" + right);
+
+                                }
+                                p2 = p2->getNext();
+                            }
+
+                        }
+                    }
+                    p1 = p1->getNext();
+                }
+
+            }
+        }
+
+        std::cout<<"LINHAS RETORNADAS: "<<rows.size()<<std::endl;
+}
+
+void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field, char type)
+{
+    Record** hashTable1 = t1->getRecords();
+    Record** hashTable2 = t2->getRecords();
+    std::vector<int> fieldIndexT1 = t1->getFieldIndex(field);
+    std::vector<int> fieldIndexT2 = t2->getFieldIndex(field);
+    std::vector<std::string> rows;
+    std::string left ="";
+    std::string right = "";
+    std::vector<std::string> valuesT1;
+    std::vector<std::string> valuesT2;
+
+    ///percorre as posições da tabela de hash de T1
+    for(int i = 0; i < t1->getTsize(); ++i){
+
+            if(hashTable1[i] != NULL){
+                Record* p1 = hashTable1[i];
+                ///percorre a lista de colisão da posição i de T1
+                while(p1 != NULL){
+                    left = "";
+                    valuesT1 = p1->getValues();
+
+
+                    for(int j = 0; j < valuesT1.size(); ++j){
+                            left+=valuesT1[j] + '\t';
+                    }
+
+                    ///percorre as posições da tabela de hash de T2
+                    for(int j = 0; j < t2->getTsize(); ++j){
+                        if(hashTable2[j] != NULL){
+
+                            Record* p2 = hashTable2[j];
+                            ///percorre a lista de colisão da posição j de T2
+
+                            while(p2 != NULL){
+                                if(concatFieldsValue(p1, fieldIndexT1 ) == concatFieldsValue(p2, fieldIndexT2)){
+                                        valuesT2 = p2->getValues();
+
+                                       right = "";
+                                       for(int k = 0; k < valuesT2.size(); ++k){
+                                            right+=valuesT2[k] + '\t';
+                                        }
+                                        rows.push_back(left + "|" + right);
+                                        p1->setMatch(true);
+                                        p2->setMatch(true);
+
+                                }
+                                p2 = p2->getNext();
+                            }
+
+                        }
+                    }
+                    p1 = p1->getNext();
+                }
+
+            }
+        }
+
+        if(type != 'R'){
+            for(int i = 0; i < t1->getTsize(); ++i ){
+                Record* p;
+                if(hashTable1[i] != NULL){
+                    p = hashTable1[i];
+
+                    while(p != NULL){
+                        if(!p->hasMatch()){
+                            left = "";
+                            for(int k = 0; k < valuesT1.size(); ++k)
+                                left+= valuesT1[k] + '\t';
+
+                            rows.push_back(left + "|" + "NULL");
+
+                        }else{
+                            p->setMatch(false);
+                        }
+                        p = p->getNext();
+
+                    }
+                }
+            }
+        }
+
+        if(type != 'L'){
+            for(int i = 0; i < t2->getTsize(); ++i ){
+                Record* p;
+                if(hashTable2[i] != NULL){
+                    p = hashTable2[i];
+
+                    while(p != NULL){
+                        if(!p->hasMatch()){
+                            right = "";
+                            for(int k = 0; k < valuesT2.size(); ++k)
+                                right+= valuesT2[k] + '\t';
+
+                            rows.push_back("NULL |" + right);
+
+
+
+                        }else{
+                            p->setMatch(false);
+                        }
+                        p = p->getNext();
+
+                    }
+                }
+            }
+        }
+
+        std::cout<<"LINHAS RETORNADAS: "<<rows.size()<<std::endl;
+}
+
+
+
+
+std::string Database::concatFieldsValue(Record* r,std::vector<int> fieldsIndex)
+{
+    std::string concat = "";
+    for(int i = 0; i < fieldsIndex.size(); ++i)
+        concat += r->getValues().at(fieldsIndex[i]);
+
+    return concat;
+}
+

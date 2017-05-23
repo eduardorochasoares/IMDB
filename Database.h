@@ -5,7 +5,12 @@
 class Database{
     private:
         Table* descriptor;
+        void quickSort(std::vector<Record*> arr, std::vector<int> fieldsIndex);
+        int partition(std::vector<Record*> arr, int start, int end, std::vector<int> fieldsIndex);
+        void swap(std::vector<Record*> arr, int i, int j);
+
     public:
+        std::string static concatFieldsValue(Record* r, std::vector<int> fieldsIndex);
         Database();
         Table* getDescriptor();
         Record* searchRecord(std::string tableName, std::string id);
@@ -17,8 +22,12 @@ class Database{
         void setDescriptor(Table* descriptor);
         void insertNode(Table* tableNode);
 
-        void innerJoin(Table* t1, Table* t2, std::string field);
-        void outerJoin(Table* t1, Table* t2, std::string field, char type);
+        void innerJoin(Table* t1, Table* t2, std::vector<std::string> field);
+        void outerJoin(Table* t1, Table* t2, std::vector<std::string> field, char type);
+
+        ///inner e outer join O(NxM) usando apenas a estrutura de busca da primeira parte do trabalho
+        void innerJoinNxM(Table* t1, Table* t2, std::vector<std::string> field);
+        void outerJoinNxM(Table* t1, Table* t2, std::vector<std::string> field, char type);
 
         void getAllData();
         ~Database();
