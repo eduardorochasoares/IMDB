@@ -34,7 +34,9 @@ int main()
         std::cout<<"5 - Remover um registro"<<std::endl;
         std::cout<<"6 - SELECT COUNT(*) FROM TABLE;"<<std::endl;
         std::cout<<"7 - SELECT COUNT(*) FROM TABLE WHERE ID = X;"<<std::endl;
-        std::cout<<"9 - Sair"<<std::endl;
+        std::cout<<"8 - INNER JOIN"<<std::endl;
+        std::cout<<"9 - OUTER JOIN"<<std::endl;
+        std::cout<<"-1 - Sair"<<std::endl;
         std::cin >> opt;
 
         switch(opt){
@@ -232,7 +234,7 @@ int main()
                     for(int i = 0; i < columns.size(); ++i)
                         std::cout<<columns[i]<<"\t"<<std::endl;
 
-                    std::cout<<"Entre com o nome de um ou mais desses campos para realizar a contagem"<<std::endl;
+                    std::cout<<"Entre com o nome de um ou mais desses campos para realizar a contagem, em uma linha, separados por espaço"<<std::endl;
                     std::cin.ignore();
 
                     std::getline (std::cin, aux);
@@ -256,7 +258,7 @@ int main()
                         values.push_back(a);
 
                     }
-                    std::cout<<"values size: "<<values.size();
+
 
 
                     t->selectCountByFields(fields, values);
@@ -265,30 +267,127 @@ int main()
             }
 
             case 8:{
-                std::string table1 = "nut_data";
-                std::string table2 = "datsrcln";
-                std::string field = "ndb_no";
+                std::string tableName1, tableName2;
+                std::string aux;
+                std::stringstream ss;
                 std::vector<std::string> fields;
 
-                fields.push_back(field);
-                fields.push_back("nutr_no");
+                std::cout<<"Digite o nome das duas tabelas onde a consulta será realizada, separados por um espaço"<<std::endl;
+                std::cin.ignore();
 
-                clock_t begin = clock();
+                std::getline (std::cin, aux);
+                ss.str(aux);
 
-                db->innerJoin(db->searchTable(table1), db->searchTable(table2), fields);
+                getline(ss, aux, ' ');
+                tableName1 = aux;
 
-                clock_t end = clock();
-
-                double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-                std::cout<<"Time elapsed: " <<time_spent<<std::endl;
+                getline(ss, aux, ' ');
+                tableName2 = aux;
 
 
+                Table* t1 = db->searchTable(tableName1);
+                Table* t2 = db->searchTable(tableName2);
+
+                if(t1 == NULL || t2 == NULL){
+                    std::cout<<"Pelo menos uma das tabelas não existe"<<std::endl;
+                }else{
+                    std::cout<<"Entre com o nome de um ou campos que são compartilhados por essas duas tabelas para realizar o INNER JOIN"<<std::endl;
+
+
+                    std::getline (std::cin, aux);
+
+                    ss.clear();
+                    ss.str("");
+                    ss.str(aux);
+
+                    while(getline(ss, aux, ' ')){
+                        fields.push_back(aux);
+
+                    }
+
+
+
+
+
+                    clock_t begin = clock();
+
+                    db->innerJoin(t1, t2, fields);
+
+                    clock_t end = clock();
+
+                    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                    std::cout<<"Time elapsed: " <<time_spent<<std::endl;
+                }
                 break;
+
             }
 
+
+            case 9:{
+                std::string tableName1, tableName2;
+                std::string aux;
+                std::stringstream ss;
+                std::vector<std::string> fields;
+
+                std::cout<<"Digite o nome das duas tabelas onde a consulta será realizada, separados por um espaço"<<std::endl;
+                std::cin.ignore();
+
+                std::getline (std::cin, aux);
+                ss.str(aux);
+
+                getline(ss, aux, ' ');
+                tableName1 = aux;
+
+                getline(ss, aux, ' ');
+                tableName2 = aux;
+
+
+                Table* t1 = db->searchTable(tableName1);
+                Table* t2 = db->searchTable(tableName2);
+
+                if(t1 == NULL || t2 == NULL){
+                    std::cout<<"Pelo menos uma das tabelas não existe"<<std::endl;
+                }else{
+                    std::cout<<"Entre com o nome de um ou campos que são compartilhados por essas duas tabelas para realizar o INNER JOIN"<<std::endl;
+
+
+                    std::getline (std::cin, aux);
+
+                    ss.clear();
+                    ss.str("");
+                    ss.str(aux);
+
+                    while(getline(ss, aux, ' ')){
+                        fields.push_back(aux);
+
+                    }
+
+                    std::cout<<"Esse Outer Join é LEFT, RIGHT OU FULL? (L, R OU F)"<<std::endl;
+                    char choice;
+                    std::cin >> choice;
+                    if(choice == 'L' || choice == 'R' || choice == 'F'){
+                        clock_t begin = clock();
+
+                        db->outerJoin(t1, t2, fields, choice);
+
+                        clock_t end = clock();
+
+                        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                        std::cout<<"Time elapsed: " <<time_spent<<std::endl;
+                    }else{
+                        std::cout<<"Opção inválida"<<std::endl;
+                    }
+                }
+                break;
+
+
+            }
         }
 
-    }while(opt != 9);
+
+
+
+    }while(opt != -1);
 
     delete db;
 

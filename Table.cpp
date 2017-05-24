@@ -420,14 +420,23 @@ void Table::printResult(Record* rec)
 std::vector<int> Table::getFieldIndex(std::vector<std::string> field)
 {
     std::vector<int> indexes;
-
-    for(int j = 0; j < field.size(); ++j)
+    bool j_exists = false;
+    for(int j = 0; j < field.size(); ++j){
         for(int i = 0; i < columns.size(); ++i){
             if(field[j] == columns[i]){
+
                 indexes.push_back(i);
+                j_exists = true;
 
             }
         }
+        if(!j_exists){
+            std::vector<int> empty;
+            return empty;
+        }else{
+            j_exists = false;
+        }
+    }
     return indexes;
 }
 

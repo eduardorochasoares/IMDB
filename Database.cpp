@@ -246,6 +246,10 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
         fieldIndexT1 = t1->getFieldIndex(field);
         fieldIndexT2 = t2->getFieldIndex(field);
     }
+    if(fieldIndexT1.empty() || fieldIndexT2.empty()){
+        std::cout<<"Alguns dos campos informados não existem nas tabelas, tente novamente"<<std::endl;
+        return;
+    }
 
     std::sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
     std::sort(vecT2.begin(), vecT2.end(), Local(fieldIndexT2));
@@ -290,7 +294,7 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
                         }
 
                         if(type == 'F'){
-                            rows.push_back("NULL |" + right);
+                            rows.push_back("NULL | " + right);
                         }
 
                         ++current;
@@ -309,10 +313,10 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
 
             if(t1FieldsValue < t2FieldsValue){
                 if(type == 'R'){
-                   rows.push_back("NULL |" + left);
+                   rows.push_back("NULL | " + left);
 
                 }else{
-                    rows.push_back  (left + "| NULL");
+                    rows.push_back  (left + " | NULL");
                 }
 
             }else{
@@ -322,7 +326,7 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
                         right+=valuesT2[j] + '\t';
                     }
 
-                     rows.push_back(left + "|" + right);
+                     rows.push_back(left + " | " + right);
 
                     ++current;
 
@@ -337,9 +341,9 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
 
         }else{
             if(type == 'R'){
-                rows.push_back("NULL |"  + left);
+                rows.push_back("NULL | "  + left);
             }else{
-                rows.push_back(left + "| NULL");
+                rows.push_back(left + " | NULL");
             }
         }
 
@@ -361,14 +365,27 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
                 right+=valuesT2[j] + '\t';
             }
 
-            rows.push_back("NULL |"  + right);
+            rows.push_back("NULL | "  + right);
             ++current;
         }
     }
-    std::cout<<"Linhas retornadas: "<< rows.size()<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<"LINHAS RETORNADAS: "<<rows.size()<<std::endl;
+        std::cout<<"Deseja Imprimir os resultados? Y ou N"<<std::endl;
 
-  /*for(int i = 0; i < rows.size(); ++i)
-        std::cout<<rows[i]<<std::endl;*/
+        char choice;
+        std::cin >> choice;
+
+        if(choice == 'Y')
+            for(int i = 0; i < rows.size(); ++i){
+                std::cout<<rows[i]<<std::endl;
+                std::cout<<std::endl;
+        }else if(choice != 'N'){
+            std::cout<<"Opção inválida"<<std::endl;
+        }
 
 }
 
@@ -376,6 +393,10 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
 {
     std::vector<int> fieldIndexT1 = t1->getFieldIndex(field);
     std::vector<int> fieldIndexT2 = t2->getFieldIndex(field);
+    if(fieldIndexT1.empty() || fieldIndexT2.empty()){
+        std::cout<<"Alguns dos campos informados não existem nas tabelas, tente novamente"<<std::endl;
+        return;
+    }
 
     std::vector<std::string> rows;
     int current = 0;
@@ -443,7 +464,7 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
                 right+=valuesT2[j] + '\t';
             }
 
-            rows.push_back(left + "|" + right);
+            rows.push_back(left + " | " + right);
 
             ++current;
 
@@ -460,11 +481,25 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
 
 
     }
-    std::cout<<"Linhas retornadas: "<< rows.size()<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<"LINHAS RETORNADAS: "<<rows.size()<<std::endl;
+        std::cout<<"Deseja Imprimir os resultados? Y ou N"<<std::endl;
 
-   /* for(int i = 0; i < rows.size(); ++i)
-        std::cout<<"Linha"<< (i + 1) <<":  "<<rows[i]<<std::endl;
-*/
+        char choice;
+        std::cin >> choice;
+
+        if(choice == 'Y')
+            for(int i = 0; i < rows.size(); ++i){
+                std::cout<<rows[i]<<std::endl;
+                std::cout<<std::endl;
+
+        }else if(choice != 'N'){
+
+            std::cout<<"Opção inválida"<<std::endl;
+        }
 }
 void Database::innerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field)
 {
@@ -472,6 +507,10 @@ void Database::innerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field)
     Record** hashTable2 = t2->getRecords();
     std::vector<int> fieldIndexT1 = t1->getFieldIndex(field);
     std::vector<int> fieldIndexT2 = t2->getFieldIndex(field);
+    if(fieldIndexT1.empty() || fieldIndexT2.empty()){
+        std::cout<<"Alguns dos campos informados não existem nas tabelas, tente novamente"<<std::endl;
+        return;
+    }
     std::vector<std::string> rows;
     std::string left ="";
     std::string right = "";
@@ -507,7 +546,7 @@ void Database::innerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field)
                                        for(int k = 0; k < valuesT2.size(); ++k){
                                             right+=valuesT2[k] + '\t';
                                         }
-                                        rows.push_back(left + "|" + right);
+                                        rows.push_back(left + " | " + right);
 
                                 }
                                 p2 = p2->getNext();
@@ -521,7 +560,22 @@ void Database::innerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field)
             }
         }
 
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
         std::cout<<"LINHAS RETORNADAS: "<<rows.size()<<std::endl;
+
+        char choice;
+        std::cin >> choice;
+
+        if(choice == 'Y')
+            for(int i = 0; i < rows.size(); ++i){
+                std::cout<<rows[i]<<std::endl;
+                std::cout<<std::endl;
+        }else if(choice != 'N'){
+            std::cout<<"Opção inválida"<<std::endl;
+        }
 }
 
 void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field, char type)
@@ -530,6 +584,11 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
     Record** hashTable2 = t2->getRecords();
     std::vector<int> fieldIndexT1 = t1->getFieldIndex(field);
     std::vector<int> fieldIndexT2 = t2->getFieldIndex(field);
+
+    if(fieldIndexT1.empty() || fieldIndexT2.empty()){
+        std::cout<<"ALGUNS DOS CAMPOS INFORMADOS NÃO EXISTEM NAS TABELAS, TENTE NOVAMENTE"<<std::endl;
+        return;
+    }
     std::vector<std::string> rows;
     std::string left ="";
     std::string right = "";
@@ -566,7 +625,7 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
                                        for(int k = 0; k < valuesT2.size(); ++k){
                                             right+=valuesT2[k] + '\t';
                                         }
-                                        rows.push_back(left + "|" + right);
+                                        rows.push_back(left + " | " + right);
                                         p1->setMatch(true);
                                         p2->setMatch(true);
 
@@ -594,7 +653,7 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
                             for(int k = 0; k < valuesT1.size(); ++k)
                                 left+= valuesT1[k] + '\t';
 
-                            rows.push_back(left + "|" + "NULL");
+                            rows.push_back(left + " | " + "NULL");
 
                         }else{
                             p->setMatch(false);
@@ -618,7 +677,7 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
                             for(int k = 0; k < valuesT2.size(); ++k)
                                 right+= valuesT2[k] + '\t';
 
-                            rows.push_back("NULL |" + right);
+                            rows.push_back("NULL | " + right);
 
 
 
@@ -632,7 +691,22 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
             }
         }
 
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<std::endl;
         std::cout<<"LINHAS RETORNADAS: "<<rows.size()<<std::endl;
+        std::cout<<"Deseja Imprimir os resultados? Y ou N"<<std::endl;
+        char choice;
+        std::cin >> choice;
+
+        if(choice == 'Y')
+            for(int i = 0; i < rows.size(); ++i){
+                std::cout<<rows[i]<<std::endl;
+                std::cout<<std::endl;
+        }else if(choice != 'N'){
+            std::cout<<"Opção inválida"<<std::endl;
+        }
 }
 
 
