@@ -168,11 +168,11 @@ Record* Table::searchRecord(std::string id)
 }
 void Table::removeRecord(std::string id)
 {
-    Record* r = searchRecord(id);
-    if(r == NULL){
+    Record* r;
+    /*if(r == NULL){
         std::cout<<"Registro inexistente"<<std::endl;
         return;
-    }
+    }*/
     std::string aux;
     std::stringstream ss;
     ss.str(id);
@@ -188,18 +188,46 @@ void Table::removeRecord(std::string id)
     ///calcula o hash de divisão para o valor de djb2 resultado
     int k = hashFunction(hash);
     ///é o primeiro da lista
-    if(r == this->records[k]){
-        this->records[k] = r->getNext();
-        delete r;
-    ///caso contrario
-    }else if(r->getNext() == NULL){
-        Record* p = records[k];
-        while(p->getNext() != r){
-            p = p->getNext();
+    if(this->records[k] != NULL){
+        if(id == concatComposeKey(this->records[k])){
+            r = this->records[k];
+            this->records[k] = r->getNext();
+            if(records[k] == NULL) std::cout<<"gluglu"<<std::endl;
+            delete r;
+
+        ///caso contrario
+        }else if(records[k]->getNext() != NULL){
+            Record* p = records[k];
+            while(1){
+                if(concatComposeKey(p->getNext()) == id){
+                    break;
+                }
+                p = p->getNext();
+
+                if(p->getNext() == NULL){
+                    std::cout<<"Registro não existe na tabela"<<std::endl;
+                    return;
+                }
+            }
+            p->setNext(p->getNext()->getNext());
+            delete p->getNext();
+        }else{
+
+            std::cout<<"Registro não existe na tabela"<<std::endl;
+            return;
+
         }
-        p->setNext(r->getNext());
-        delete r;
+    }else{
+        std::cout<<"Registro não existe na tabela"<<std::endl;
+        return;
     }
+    std::cout<<std::endl;
+    std::cout<<"Registro Removido com sucesso"<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<std::endl;
+
+    this->records_number-=1;
+
 }
 
 
@@ -311,20 +339,8 @@ void Table::setPrimaryKeyIndex(std::vector<int>index)
 
 void Table::selectCount()
 {
-    int count = 0;
-    for(int i = 0; i < TSIZE; ++i){
-        ///entrada i da tabela de hash não está vazia
-        if(records[i] != NULL){
-            count++;
-            ///percorre a lista de colisoes da posicao i
-            Record* p = records[i]->getNext();
-            while(p != NULL){
-                count++;
-                p = p->getNext();
-            }
-        }
-    }
-    std::cout<<count<<" registros encontrados para esta consulta."<<std::endl;
+
+    std::cout<<records_number<<" registros encontrados para esta consulta."<<std::endl;
 
 }
 
@@ -347,7 +363,6 @@ void Table::selectCountByFields(std::vector<std::string> field, std::vector<std:
 
         if(records[i] != NULL){
 
-            std::cout<<Database::concatFieldsValue(records[i], columnIndex) <<"aa " <<concatValues<<std::endl;
             if(Database::concatFieldsValue(records[i], columnIndex) == concatValues){
                 count++;
             }

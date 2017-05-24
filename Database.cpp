@@ -382,10 +382,11 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
     int previousInital = 0;
 
     std::vector<Record*> vecT1 = t1->moveRecToVector();
-    std::stable_sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
+    std::sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
 
     std::vector<Record*> vecT2 = t2->moveRecToVector();
-    std::stable_sort(vecT2.begin(), vecT2.end(), Local(fieldIndexT2));
+
+    std::sort(vecT2.begin(), vecT2.end(), Local(fieldIndexT2));
 
 
 
@@ -644,5 +645,34 @@ std::string Database::concatFieldsValue(Record* r,std::vector<int> fieldsIndex)
         concat += r->getValues().at(fieldsIndex[i]);
 
     return concat;
+}
+
+void Database::selectCount(std::string tableName)
+{
+    Table* t = searchTable(tableName);
+    if(t == NULL){
+        std::cout<<"Tabela não existe"<<std::endl;
+    }else{
+        t->selectCount();
+    }
+}
+
+void Database::selectCountId(std::string tableName, std::vector<std::string> fields, std::vector<std::string> values)
+{
+    Table* t = searchTable(tableName);
+    if(t == NULL){
+        std::cout<<"Tabela não existe"<<std::endl;
+    }else{
+        t->selectCountByFields(fields, values);
+    }
+}
+void Database::removeRecord(std::string tableName, std::string id)
+{
+    Table* t = searchTable(tableName);
+    if(t == NULL){
+        std::cout<<"Tabela não existe"<<std::endl;
+    }else{
+        t->removeRecord(id);
+    }
 }
 

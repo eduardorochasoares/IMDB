@@ -190,10 +190,6 @@ int main()
 
 
                     t->removeRecord(aux);
-                    std::cout<<std::endl;
-                    std::cout<<"Registro Removido com sucesso"<<std::endl;
-                    std::cout<<std::endl;
-                    std::cout<<std::endl;
 
 
                 }
@@ -269,14 +265,24 @@ int main()
             }
 
             case 8:{
-                std::string table1 = "data_src";
+                std::string table1 = "nut_data";
                 std::string table2 = "datsrcln";
-                std::string field = "datasrc_id";
+                std::string field = "ndb_no";
                 std::vector<std::string> fields;
+
                 fields.push_back(field);
+                fields.push_back("nutr_no");
+
+                clock_t begin = clock();
+
+                db->innerJoin(db->searchTable(table1), db->searchTable(table2), fields);
+
+                clock_t end = clock();
+
+                double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                std::cout<<"Time elapsed: " <<time_spent<<std::endl;
 
 
-                db->outerJoinNxM(db->searchTable(table1), db->searchTable(table2), fields, 'R');
                 break;
             }
 

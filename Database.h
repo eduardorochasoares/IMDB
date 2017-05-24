@@ -5,9 +5,7 @@
 class Database{
     private:
         Table* descriptor;
-        void quickSort(std::vector<Record*> arr, std::vector<int> fieldsIndex);
-        int partition(std::vector<Record*> arr, int start, int end, std::vector<int> fieldsIndex);
-        void swap(std::vector<Record*> arr, int i, int j);
+
 
     public:
         std::string static concatFieldsValue(Record* r, std::vector<int> fieldsIndex);
@@ -21,6 +19,10 @@ class Database{
         void alterTable(std::string tableName, std::vector<std::string> keys);
         void setDescriptor(Table* descriptor);
         void insertNode(Table* tableNode);
+
+        void removeRecord(std::string tableName, std::string id);
+        void selectCount(std::string tableName);
+        void selectCountId(std::string tableName, std::vector<std::string> fields, std::vector<std::string> values);
 
         void innerJoin(Table* t1, Table* t2, std::vector<std::string> field);
         void outerJoin(Table* t1, Table* t2, std::vector<std::string> field, char type);

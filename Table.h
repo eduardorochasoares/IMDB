@@ -41,6 +41,8 @@ class Table{
         std::vector<int> getPrimaryKeyIndex();
         int getTsize();
 
+
+
         void setPrimaryKeyIndex(std::vector<int> index);
         void setPrimaryKeys(std::vector<std::string> columns);
         void setName(std::string name);
