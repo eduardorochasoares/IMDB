@@ -190,7 +190,8 @@ int main()
 
 
 
-
+                    std::cout<<std::endl;
+                    std::cout<<std::endl;
                     t->removeRecord(aux);
 
 
@@ -209,6 +210,8 @@ int main()
                 if(t == NULL){
                     std::cout<<"Tabela inexistente no banco de dados"<<std::endl;
                 }else{
+                    std::cout<<std::endl;
+                    std::cout<<std::endl;
                     t->selectCount();
                 }
                 break;
@@ -260,7 +263,8 @@ int main()
                     }
 
 
-
+                    std::cout<<std::endl;
+                    std::cout<<std::endl;
                     t->selectCountByFields(fields, values);
                 }
                 break;
@@ -280,9 +284,11 @@ int main()
 
                 getline(ss, aux, ' ');
                 tableName1 = aux;
+                std::cout<<aux<<std::endl;
 
                 getline(ss, aux, ' ');
                 tableName2 = aux;
+                std::cout<<aux<<std::endl;
 
 
                 Table* t1 = db->searchTable(tableName1);
@@ -291,7 +297,7 @@ int main()
                 if(t1 == NULL || t2 == NULL){
                     std::cout<<"Pelo menos uma das tabelas não existe"<<std::endl;
                 }else{
-                    std::cout<<"Entre com o nome de um ou campos que são compartilhados por essas duas tabelas para realizar o INNER JOIN"<<std::endl;
+                    std::cout<<"Entre com o nome de um ou campos que são compartilhados por essas duas tabelas em uma única linha, separados por espaço, para realizar o INNER JOIN"<<std::endl;
 
 
                     std::getline (std::cin, aux);
@@ -305,18 +311,8 @@ int main()
 
                     }
 
-
-
-
-
-                    clock_t begin = clock();
-
                     db->innerJoin(t1, t2, fields);
 
-                    clock_t end = clock();
-
-                    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-                    std::cout<<"Time elapsed: " <<time_spent<<std::endl;
                 }
                 break;
 
@@ -348,7 +344,7 @@ int main()
                 if(t1 == NULL || t2 == NULL){
                     std::cout<<"Pelo menos uma das tabelas não existe"<<std::endl;
                 }else{
-                    std::cout<<"Entre com o nome de um ou campos que são compartilhados por essas duas tabelas para realizar o INNER JOIN"<<std::endl;
+                    std::cout<<"Entre com o nome de um ou campos que são compartilhados por essas duas tabelas, em uma única linha sem espaço, para realizar o OUTER JOIN"<<std::endl;
 
 
                     std::getline (std::cin, aux);
@@ -366,14 +362,11 @@ int main()
                     char choice;
                     std::cin >> choice;
                     if(choice == 'L' || choice == 'R' || choice == 'F'){
-                        clock_t begin = clock();
+
 
                         db->outerJoin(t1, t2, fields, choice);
 
-                        clock_t end = clock();
 
-                        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-                        std::cout<<"Time elapsed: " <<time_spent<<std::endl;
                     }else{
                         std::cout<<"Opção inválida"<<std::endl;
                     }

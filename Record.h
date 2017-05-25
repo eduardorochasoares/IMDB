@@ -6,7 +6,9 @@ class Record{
     private:
         std::vector<std::string> values;
         Record* next;
-        bool match = false;
+
+        bool match = false; ///flag usado para o outerJoinNxM para verificar se o registro
+                            ///teve match com alguém
 
     public:
         std::vector<std::string>& getValues();

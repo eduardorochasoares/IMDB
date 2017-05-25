@@ -192,18 +192,18 @@ void Table::removeRecord(std::string id)
         if(id == concatComposeKey(this->records[k])){
             r = this->records[k];
             this->records[k] = r->getNext();
-            if(records[k] == NULL) std::cout<<"gluglu"<<std::endl;
             delete r;
 
-        ///caso contrario
+        ///caso contrario, tem próximo elemento na lista?
         }else if(records[k]->getNext() != NULL){
             Record* p = records[k];
+            ///percorre a lista de colisão
             while(1){
                 if(concatComposeKey(p->getNext()) == id){
                     break;
                 }
                 p = p->getNext();
-
+                ///chegou no fim da lista de colisão
                 if(p->getNext() == NULL){
                     std::cout<<"Registro não existe na tabela"<<std::endl;
                     return;
@@ -211,8 +211,9 @@ void Table::removeRecord(std::string id)
             }
             p->setNext(p->getNext()->getNext());
             delete p->getNext();
-        }else{
 
+        }else{
+            ///não tem proximo elemento
             std::cout<<"Registro não existe na tabela"<<std::endl;
             return;
 
@@ -337,37 +338,58 @@ void Table::setPrimaryKeyIndex(std::vector<int>index)
     this->primaryKeysIndex = index;
 }
 
+/***
+    retorna o número de registros em uma tabela
+***/
 void Table::selectCount()
 {
 
-    std::cout<<records_number<<" registros encontrados para esta consulta."<<std::endl;
+    std::cout<<this->records_number<<" registros encontrados para esta consulta."<<std::endl;
 
 }
+
+/***
+    Função que conta quantos elementos em uma tabela tem valores de certos campos igual
+    a determinados valores
+
+    @param field - Vetor com nome dos campos da tabela a serem testados
+    @param value - Vetor com os valores dos campos a serem testados
+***/
 
 void Table::selectCountByFields(std::vector<std::string> field, std::vector<std::string> value)
 {
     int count = 0;
     std::string concatValues = "";
 
-
+    ///pega os indices correspondentes no vetor de colunas dos campos que serão testados na
+    ///operacao de count
     std::vector<int> columnIndex = this->getFieldIndex(field);
+
+    ///concatena os valores de campos a serem testados para realizar a contagem
     for(int i = 0; i < value.size(); ++i)
         concatValues += value[i];
 
+    ///os campos passados não existem na tabela
     if(columnIndex.empty()){
-        std::cout<<"Campo inexistente na tabela " <<this->name<<std::endl;
+        std::cout<<"Campos inexistentes na tabela " <<this->name<<std::endl;
         return;
     }
+
     std::vector<std::string> values;
+    ///percorre a tabela de hash
     for(int i = 0; i < TSIZE; ++i){
 
         if(records[i] != NULL){
 
+
             if(Database::concatFieldsValue(records[i], columnIndex) == concatValues){
                 count++;
             }
+            ///percorre a lista de colisão da posição i da tabela de hash
             Record* p = records[i]->getNext();
             while(p != NULL){
+                ///verifica se os campos do registro p concatenado é igual
+                ///aos valores passados pelo usuário para a busca concatenados
                 if(Database::concatFieldsValue(p, columnIndex) == concatValues){
                     count++;
                 }
@@ -380,7 +402,8 @@ void Table::selectCountByFields(std::vector<std::string> field, std::vector<std:
     std::cout<<count<<" registros encontrados para esta consulta."<<std::endl;
 }
 
-
+///percorre toda estrutura da tabela movendo os registros para um vetor, é utilizada
+///nas operações de JOin
 std::vector<Record*> Table::moveRecToVector()
 {
     std::vector<Record*> auxVector;
@@ -417,6 +440,10 @@ void Table::printResult(Record* rec)
     std::cout<<std::endl;
 }
 
+/***
+    Função que dada um conjunto de nome de campos da tabela, retorna os índices desses campos
+    no vetor de colunas
+***/
 std::vector<int> Table::getFieldIndex(std::vector<std::string> field)
 {
     std::vector<int> indexes;

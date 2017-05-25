@@ -3,6 +3,10 @@
 #include <iostream>
 #include <stack>
 #include <fstream>
+/***
+Struct que é passada como parâmetro para a função de ordenação para que seja possível
+ordenar pela concatenãção dos campos passados para o join
+***/
 struct Local{
     Local(std::vector<int> param1){
         this->param1 = param1;
@@ -14,6 +18,7 @@ struct Local{
     }
     std::vector<int> param1;
 };
+
 ///retorna um ponteiro para o primeiro elemento da lista de tabelas do banco de dados
 Table* Database::getDescriptor()
 {
@@ -218,6 +223,15 @@ Database::~Database()
 }
 
 
+/***
+    Função que faz Outer Join e utiliza vetores auxiliares ordenados para realizar
+    essa operação em tempo O(Nlog(N) + Mlog(M))
+
+    @param t1 - tabela 1
+    @param t2 - tabela 2
+    @param field - campos que serão utilizados no join
+    @param type - Tipo de Outer Join
+***/
 void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, char type)
 {
 
@@ -232,6 +246,10 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
     std::vector<std::string> valuesT1;
     std::vector<std::string> valuesT2;
 
+    /*** se é RIGHT, apenas inverte, para que os elementos da
+     direita procurem matchs na esquerda, invés de ao contrário***/
+
+    ///move os elementos da estrutura de busca para vetores auxiliares
     if(type == 'R'){
         vecT1 = t2->moveRecToVector();
         vecT2 = t1->moveRecToVector();
@@ -251,17 +269,23 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
         return;
     }
 
+    ///ordena os vetores
     std::sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
     std::sort(vecT2.begin(), vecT2.end(), Local(fieldIndexT2));
 
 
     int i;
+    ///avança no vetor da esquerda
     for(i = 0; i < vecT1.size(); ++i){
 
         if(i > 0){
             std::string values1 = concatFieldsValue(vecT1[i], fieldIndexT1);
             std::string values2 = concatFieldsValue(vecT1[i - 1], fieldIndexT1);
 
+            /**verifica se o elemento corrente do vetor da esquerda  é igual ao anterior.
+            Se for, a busca por matchs no vetor da direita para esse valor
+            deve começar aonde o anterior começou. Caso contrário começa de onde o anterior
+            parou**/
             if(values1 == values2){
                 current = previousInital;
             }else{
@@ -274,17 +298,29 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
         std::string row = "";
 
         valuesT1 = vecT1[i]->getValues();
+
+        ///concatena os campos do vetor da esquerda
         for(int j = 0; j < valuesT1.size(); ++j){
             left+=valuesT1[j] + '\t';
         }
 
         std::string t1FieldsValue = concatFieldsValue(vecT1[i], fieldIndexT1);
+
+        ///vetor da direita não acabou?
         if(current < vecT2.size()){
 
             valuesT2 = vecT2[current]->getValues();
             std::string t2FieldsValue = concatFieldsValue(vecT2[current], fieldIndexT2);
 
             if(t1FieldsValue != t2FieldsValue){
+
+                    /** enquanto o valor de campo do elemento corrente da esquerda for maior
+                    que da direita, avança um elemento na direita. Porém antes, adiciona
+                    o registro da direita sozinho se for Full, pois ele não tem match*/
+
+                    /*** Obs: Se for Right o elemento da direita não é adicionado por causa
+                    da inversão que é feita no inicio do método. Ele é tratado como
+                    se fosse tabela da esquerda pelo algoritmo ***/
 
                     while(t1FieldsValue > t2FieldsValue){
                         right ="";
@@ -311,15 +347,21 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
 
             }
 
+            /**se o elemento da esquerda é menor que o da direita, então o da esquerda
+            não teve match,  portanto o adiciona sozinho*/
             if(t1FieldsValue < t2FieldsValue){
+                ///é right?
                 if(type == 'R'){
                    rows.push_back("NULL | " + left);
 
                 }else{
+                    ///é full ou left
                     rows.push_back  (left + " | NULL");
                 }
 
             }else{
+                /**enquanto for match vai adicionando as combinações e avançando no vetor
+                da direita**/
                 while(t1FieldsValue == t2FieldsValue){
                     right = "";
                     for(int j = 0; j < valuesT2.size(); ++j){
@@ -339,6 +381,7 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
                 }
             }
 
+        ///o vetor da direita acabou mas o da esquerda não
         }else{
             if(type == 'R'){
                 rows.push_back("NULL | "  + left);
@@ -353,6 +396,9 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
 
 
     }
+    /*** se é FULL e o vetor da direita ainda não chegou ao final
+    mas o da esquerda já chegou, então adiciona o restante dos elementos da direita
+    nas linhas retornadas*/
     if(type == 'F'){
         while(current < vecT2.size()){
 
@@ -389,10 +435,23 @@ void Database::outerJoin(Table* t1, Table* t2, std::vector<std::string> field, c
 
 }
 
+
+
+/***
+    Função que faz Inner Join e utiliza vetores auxiliares ordenados para realizar
+    essa operação em tempo O(Nlog(N) + Mlog(M))
+
+    @param t1 - tabela 1
+    @param t2 - tabela 2
+    @param field - campos que serão utilizados no join
+***/
 void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
 {
+    ///pega os indices dos campos passados por parametro no vetor de colunas da tabela
+
     std::vector<int> fieldIndexT1 = t1->getFieldIndex(field);
     std::vector<int> fieldIndexT2 = t2->getFieldIndex(field);
+
     if(fieldIndexT1.empty() || fieldIndexT2.empty()){
         std::cout<<"Alguns dos campos informados não existem nas tabelas, tente novamente"<<std::endl;
         return;
@@ -402,6 +461,9 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
     int current = 0;
     int previousInital = 0;
 
+    /**move os registros das estruturas de dados de busca das duas
+    tabelas do banco de dados para vetores e em seguida ordena esses vetores
+    **/
     std::vector<Record*> vecT1 = t1->moveRecToVector();
     std::sort(vecT1.begin(), vecT1.end(), Local(fieldIndexT1));
 
@@ -412,12 +474,16 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
 
 
     int i;
-
+    ///avança no vetor da esquerda
     for(i = 0; i < vecT1.size(); ++i){
         if(i > 0){
             std::string values1 = concatFieldsValue(vecT1[i], fieldIndexT1);
             std::string values2 = concatFieldsValue(vecT1[i - 1], fieldIndexT1);
 
+            /**verifica se o elemento corrente do vetor da esquerda  é igual ao anterior.
+            Se for, a busca por matchs no vetor da direita para esse valor
+            deve começar aonde o anterior começou. Caso contrário começa de onde o anterior
+            parou**/
             if(values1 == values2){
                 current = previousInital;
             }else{
@@ -432,9 +498,13 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
         std::vector<std::string> valuesT1 = vecT1[i]->getValues();
         std::string t1FieldsValues = concatFieldsValue(vecT1[i], fieldIndexT1);
 
+        /***
+            concatena os campos do elemento da esquerda corrente
+        ***/
         for(int j = 0; j < valuesT1.size(); ++j){
             left+=valuesT1[j] + '\t';
         }
+        ///ja percorreu todo o vetor da direita?
         if(current >= vecT2.size())
             break;
 
@@ -442,7 +512,8 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
         std::string t2FieldsValues = concatFieldsValue(vecT2[current], fieldIndexT2);
 
         if(t1FieldsValues != t2FieldsValues){
-
+              /** enquanto o valor de campo do elemento corrente da esquerda for
+              maior que da direita, avança um elemento na direita**/
               while(t1FieldsValues > t2FieldsValues){
                     ++current;
 
@@ -456,7 +527,8 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
                 }
                 previousInital = current;
         }
-
+        /**enquanto o elemento corrente da esquerda for igual o da direita
+        quer dizer que está dando match*/
         while(t1FieldsValues == t2FieldsValues){
             right ="";
 
@@ -468,6 +540,7 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
 
             ++current;
 
+            ///chegou ao fim do vetor da direita
             if(current >= vecT2.size())
                 break;
 
@@ -501,12 +574,23 @@ void Database::innerJoin(Table* t1, Table* t2, std::vector<std::string> field)
             std::cout<<"Opção inválida"<<std::endl;
         }
 }
+
+/***
+    Função que faz o InnerJoin sem o uso de estrutura auxiliar - Algoritmo O(N x M)
+
+    @param t1 - tabela 1
+    @param t2 - tabela 2
+    @param field - vetor com o nome dos campos a serem utilizados no Join
+***/
 void Database::innerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field)
 {
     Record** hashTable1 = t1->getRecords();
     Record** hashTable2 = t2->getRecords();
+
+    ///pega os indices dos campos passados por parametro no vetor de colunas da tabela
     std::vector<int> fieldIndexT1 = t1->getFieldIndex(field);
     std::vector<int> fieldIndexT2 = t2->getFieldIndex(field);
+
     if(fieldIndexT1.empty() || fieldIndexT2.empty()){
         std::cout<<"Alguns dos campos informados não existem nas tabelas, tente novamente"<<std::endl;
         return;
@@ -526,7 +610,7 @@ void Database::innerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field)
                     left = "";
                     valuesT1 = p1->getValues();
 
-
+                    ///concatena os campos do registro corrente da tabela da esquerda
                     for(int j = 0; j < valuesT1.size(); ++j){
                             left+=valuesT1[j] + '\t';
                     }
@@ -539,10 +623,12 @@ void Database::innerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field)
                             ///percorre a lista de colisão da posição j de T2
 
                             while(p2 != NULL){
+                                ///deu match?
                                 if(concatFieldsValue(p1, fieldIndexT1 ) == concatFieldsValue(p2, fieldIndexT2)){
                                         valuesT2 = p2->getValues();
 
                                        right = "";
+                                       ///concatena os campos do registro corrente da tabela da direita
                                        for(int k = 0; k < valuesT2.size(); ++k){
                                             right+=valuesT2[k] + '\t';
                                         }
@@ -578,10 +664,21 @@ void Database::innerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field)
         }
 }
 
+/***
+    Método responsável por realizar o OuterJoin sem a utilização de estrutura auxiliar
+    Algoritmo O(N x M)
+
+    @param t1 - tabela 1
+    @param t2 - tabela 2
+    @param field - vetor com os campos envolvidos na consulta OUTER JOIN
+    @param type - tipo de outer join, Left, Right ou Full
+***/
 void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field, char type)
 {
     Record** hashTable1 = t1->getRecords();
     Record** hashTable2 = t2->getRecords();
+
+    ///pega os indices dos campos passados por parametro no vetor de colunas da tabela
     std::vector<int> fieldIndexT1 = t1->getFieldIndex(field);
     std::vector<int> fieldIndexT2 = t2->getFieldIndex(field);
 
@@ -605,7 +702,7 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
                     left = "";
                     valuesT1 = p1->getValues();
 
-
+                    ///concatena os campos do elemento corrente da tabela esquerda
                     for(int j = 0; j < valuesT1.size(); ++j){
                             left+=valuesT1[j] + '\t';
                     }
@@ -618,10 +715,12 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
                             ///percorre a lista de colisão da posição j de T2
 
                             while(p2 != NULL){
+                                ///verifica se deu match
                                 if(concatFieldsValue(p1, fieldIndexT1 ) == concatFieldsValue(p2, fieldIndexT2)){
                                         valuesT2 = p2->getValues();
 
                                        right = "";
+                                       ///concatena os campos do registro corrente da tabela direita
                                        for(int k = 0; k < valuesT2.size(); ++k){
                                             right+=valuesT2[k] + '\t';
                                         }
@@ -641,6 +740,9 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
             }
         }
 
+        /**se o tipo não é R, então é L ou F,
+        então percorre os registros da tabela da esquerda incluindo os registros que não
+        tiveram match **/
         if(type != 'R'){
             for(int i = 0; i < t1->getTsize(); ++i ){
                 Record* p;
@@ -664,6 +766,10 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
                 }
             }
         }
+
+        /**se o tipo não é L, então é Right ou Full,
+        então percorre os registros da tabela da direita incluindo os registros que não
+        tiveram match **/
 
         if(type != 'L'){
             for(int i = 0; i < t2->getTsize(); ++i ){
@@ -711,7 +817,11 @@ void Database::outerJoinNxM(Table* t1, Table* t2, std::vector<std::string>field,
 
 
 
+/***concatena os valores dos campos do registro r que tem indices  em "fieldIndex"
 
+    @param: r - Registro que terá seus campos concatenados
+    @param: fieldsIndex - Indíces dos campos a serem concatenados
+***/
 std::string Database::concatFieldsValue(Record* r,std::vector<int> fieldsIndex)
 {
     std::string concat = "";
@@ -721,6 +831,7 @@ std::string Database::concatFieldsValue(Record* r,std::vector<int> fieldsIndex)
     return concat;
 }
 
+///chama a função para contar quantos registros existem em uma tabela
 void Database::selectCount(std::string tableName)
 {
     Table* t = searchTable(tableName);
@@ -731,6 +842,7 @@ void Database::selectCount(std::string tableName)
     }
 }
 
+///chama a função de contar quantos registros tem certos campos iguais certos valores
 void Database::selectCountId(std::string tableName, std::vector<std::string> fields, std::vector<std::string> values)
 {
     Table* t = searchTable(tableName);
@@ -740,6 +852,7 @@ void Database::selectCountId(std::string tableName, std::vector<std::string> fie
         t->selectCountByFields(fields, values);
     }
 }
+///Localiza a tabela e chama a função de remover registro da classe Table
 void Database::removeRecord(std::string tableName, std::string id)
 {
     Table* t = searchTable(tableName);
